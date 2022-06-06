@@ -10,6 +10,9 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+/**
+ * @description Uploads an image to memory.
+ */
 const uploadImage = multer({ storage, fileFilter });
 
 module.exports = { uploadImage };

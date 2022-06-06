@@ -2,6 +2,8 @@ const Queue = require('bull');
 
 const { redisOptions } = require('./redis');
 
-const QueueBackgroundJob = new Queue('backgroundJobs', { redis: redisOptions });
+const jobOptions = { redis: redisOptions, settings: { lockDuration: 10000 } };
+
+const QueueBackgroundJob = new Queue('backgroundJobs', jobOptions);
 
 module.exports = { QueueBackgroundJob };

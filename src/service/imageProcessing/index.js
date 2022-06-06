@@ -1,6 +1,7 @@
 const createError = require('http-errors');
 const sharp = require('sharp');
 const { JOB_TYPE } = require('../../constants');
+const { isValidFormatType } = require('../../helpers/imageProcessor');
 
 module.exports = class ImageProcessingService {
   constructor({ cacheService, s3Service, imageService, queueBackgroundJob }) {
@@ -10,6 +11,11 @@ module.exports = class ImageProcessingService {
     this.imageService = imageService;
   }
 
+  /**
+   * @description Gets the image data from the cache
+   * @param {String} imageId
+   * @returns {Object} image
+   */
   async getImageData(imageId) {
     try {
       const imageData = await this.cacheService.getImage(imageId);
@@ -21,6 +27,11 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Gets the meta data of the image
+   * @param {Object} image
+   * @returns {Object} metaData
+   */
   async metaData(image) {
     try {
       const metaData = await sharp(image).metadata();
@@ -32,6 +43,13 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Resizes the image
+   * @param {String} publicId
+   * @param {Number} width
+   * @param {Number} height
+   * @returns {Void} void
+   */
   async resize(publicId, width, height) {
     try {
       const image = await this.getImageData(publicId);
@@ -93,6 +111,12 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Crops the image
+   * @param {String} publicId
+   * @param {Object} dimensions
+   * @returns {Void} void
+   */
   async crop(publicId, dimensions) {
     try {
       const image = await this.getImageData(publicId);
@@ -154,6 +178,11 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Grayscales the image
+   * @param {String} publicId
+   * @returns {Void} void
+   */
   async grayscale(publicId) {
     try {
       const image = await this.getImageData(publicId);
@@ -199,6 +228,12 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Applies Tint to the image
+   * @param {String} publicId
+   * @param {Object} tintColor
+   * @returns {Void} void
+   */
   async tint(publicId, tintColor) {
     try {
       const image = await this.getImageData(publicId);
@@ -246,6 +281,12 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Rotates the image
+   * @param {String} publicId
+   * @param {Number} angle
+   * @returns {Void} void
+   */
   async rotate(publicId, angle) {
     try {
       const image = await this.getImageData(publicId);
@@ -295,6 +336,12 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Applies Blur to the image
+   * @param {String} publicId
+   * @param {Number} blurPoint
+   * @returns {Void} void
+   */
   async blur(publicId, blurPoint) {
     try {
       const image = await this.getImageData(publicId);
@@ -344,6 +391,12 @@ module.exports = class ImageProcessingService {
     }
   }
 
+  /**
+   * @description Sharpens the image
+   * @param {String} publicId
+   * @param {String} watermark
+   * @returns {Void} void
+   */
   async sharpen(publicId, sharpenPoint) {
     try {
       const image = await this.getImageData(publicId);
@@ -389,6 +442,43 @@ module.exports = class ImageProcessingService {
       return;
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, sharpenPoint } };
+      throw error;
+    }
+  }
+
+  /**
+   * @description Formats the image to a new image format
+   * @param {String} publicId 
+   * @param {String} formatType 
+   * @returns {Void} void
+   */
+  async format(publicId, formatType) {
+    try {
+      const image = await this.getImageData(publicId);
+
+      const buffer = Buffer.from(image.buffer, 'base64');
+
+      if (!formatType) {
+        throw createError(422, 'Format type must be provided');
+      }
+
+      if (!isValidFormatType(formatType)) {
+        throw createError(422, 'Invalid format type');
+      }
+
+      const formattedBuffer = await sharp(buffer).toFormat(formatType).toBuffer();
+
+      const file = {
+        originalname: `${image.fileName.split('.')[0]}.${formatType}`,
+        mimetype: `image/${formatType}`,
+        buffer: formattedBuffer,
+      };
+
+      const result = await this.imageService.upload(file);
+
+      return result;
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.format': { publicId, formatType } };
       throw error;
     }
   }

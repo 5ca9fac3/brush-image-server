@@ -11,4 +11,13 @@ const uploadFile = async (req, res) => {
   }
 };
 
-module.exports = { uploadFile };
+const downloadFile = async (req, res) => {
+  try {
+    await imageService.download(req.params.publicId, res);
+
+  } catch (error) {
+    res.status(error.status || 500).json(response(error));
+  }
+};
+
+module.exports = { uploadFile, downloadFile };

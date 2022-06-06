@@ -3,6 +3,10 @@ const createError = require('http-errors');
 
 const v1Routes = require('./v1/v1Routes');
 
+/**
+ * @description Router for the API.
+ * @param {Object} app 
+ */
 const router = (app) => {
   const apiRoutes = express.Router();
 

@@ -16,4 +16,6 @@ const JOB_TYPE = {
   sharpen: { name: 'sharpen', concurrency: 1 },
 };
 
-module.exports = { JOB_TYPE };
+const formatTypes = ['png', 'jpg', 'jpeg', 'webp'];
+
+module.exports = { JOB_TYPE, formatTypes };

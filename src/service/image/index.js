@@ -8,6 +8,11 @@ module.exports = class ImageService {
     this.queueBackgroundJob = queueBackgroundJob;
   }
 
+  /**
+   * @description Uploads image to S3 bucket and info to databse
+   * @param {Object} file 
+   * @returns {Object} { publicId }
+   */
   async upload(file) {
     try {
       const store = await this.s3Service.uploadImage(file);
@@ -28,10 +33,11 @@ module.exports = class ImageService {
         buffer: file.buffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.upload.name, { imageData }, { removeOnComplete: true, removeOnFail: true });
-      this.queueBackgroundJob.process(JOB_TYPE.upload.name, JOB_TYPE.upload.concurrency, (job) =>
-        this.cacheService.setImage(job.data.imageData)
-      );
+      this.queueBackgroundJob.add(JOB_TYPE.upload.name, { imageData });
+      this.queueBackgroundJob.process(JOB_TYPE.upload.name, JOB_TYPE.upload.concurrency, (job, done) => {
+        this.cacheService.setImage(job.data.imageData);
+        done();
+      });
 
       return { publicId: image._id };
     } catch (error) {
@@ -40,6 +46,34 @@ module.exports = class ImageService {
     }
   }
 
+  /**
+   * @description Downloads the image from S3 bucket
+   * @param {String} publicId 
+   * @param {Response} res 
+   * @returns {Void} void
+   */
+  async download(publicId, res) {
+    try {
+      const image = await this.imageRepository.findById(publicId);
+
+      this.queueBackgroundJob.add(JOB_TYPE.download.name, { image });
+      this.queueBackgroundJob.process(JOB_TYPE.download.name, JOB_TYPE.download.concurrency, (job, done) => {
+        this.s3Service.retrieveImage(job.data.image, res);
+        done();
+      });
+
+      return;
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageService.download': { publicId, res } };
+      throw error;
+    }
+  }
+
+  /**
+   * @description Updates the database info with processed type
+   * @param {Object} imageData 
+   * @returns {Void} void
+   */
   async updateProcessedImage(imageData) {
     try {
       const updatedData = [

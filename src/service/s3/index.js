@@ -5,6 +5,11 @@ module.exports = class S3Service {
     this.s3Object = s3Object;
   }
 
+  /**
+   * @description Uploads an image to S3
+   * @param {Object} file
+   * @returns {Object} S3 response
+   */
   async uploadImage(file) {
     try {
       const params = {
@@ -22,22 +27,33 @@ module.exports = class S3Service {
     }
   }
 
-  async retrieveImage(image) {
+  /**
+   * @description Downloads an image from S3
+   * @param {Object} image
+   * @param {Response} res
+   * @returns {Void} void
+   */
+  async retrieveImage(image, res) {
     try {
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${image.key}`,
+        Key: `${image.accessKey}`,
       };
 
-      const result = await this.s3Object.getObject(params).promise();
-
-      return result;
+      res.attachment(`${image.processType || 'original'}-${image.accessKey}`);
+      const fileStream = this.s3Object.getObject(params).createReadStream();
+      fileStream.pipe(res);
     } catch (error) {
-      error.meta = { ...error.meta, 's3Service.uploadImage': { image } };
+      error.meta = { ...error.meta, 's3Service.retrieveImage': { image, res } };
       throw error;
     }
   }
 
+  /**
+   * @description Updates the image in S3
+   * @param {Object} image 
+   * @returns {Object} { success }
+   */
   async updateImage(image) {
     try {
       const params = {

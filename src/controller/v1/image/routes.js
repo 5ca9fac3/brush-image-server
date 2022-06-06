@@ -7,4 +7,6 @@ const { uploadImage } = require('../../../service/services');
 
 imageRoute.post('/upload', uploadImage.single('file'), image.uploadFile);
 
+imageRoute.post('/download/:publicId', image.downloadFile);
+
 module.exports = { imageRoute };

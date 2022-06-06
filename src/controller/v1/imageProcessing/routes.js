@@ -17,4 +17,6 @@ imageProcessingRoute.post('/blur/:publicId', imageProcessing.blur);
 
 imageProcessingRoute.post('/sharpen/:publicId', imageProcessing.sharpen);
 
+imageProcessingRoute.post('/format/:publicId', imageProcessing.format);
+
 module.exports = { imageProcessingRoute };

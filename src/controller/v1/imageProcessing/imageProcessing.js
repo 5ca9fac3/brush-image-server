@@ -85,4 +85,16 @@ const sharpen = async (req, res) => {
   }
 };
 
-module.exports = { resize, crop, grayscale, tint, rotate, blur, sharpen };
+const format = async (req, res) => {
+  try {
+    const { formatType = null } = req.body;
+
+    const data = await imageProcessingService.format(req.params.publicId, formatType);
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(error.status || 500).json(response(error));
+  }
+};
+
+module.exports = { resize, crop, grayscale, tint, rotate, blur, sharpen, format };

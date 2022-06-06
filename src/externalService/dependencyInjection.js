@@ -6,6 +6,10 @@ const { redis } = require('./redis');
 const { QueueBackgroundJob } = require('./bull');
 const { s3Object } = require('./s3');
 
+/**
+ * @description Creates a container with all the dependencies.
+ * @returns {Object} The container. 
+ */
 const Container = () => {
   const container = createContainer();
 

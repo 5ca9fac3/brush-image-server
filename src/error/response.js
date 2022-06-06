@@ -1,3 +1,8 @@
+/**
+ * @description Error response
+ * @param {Error} error 
+ * @returns {Object} { status, message }
+ */
 const response = (error) => {
   console.log(error);
   if (error.status === 500) {
