@@ -1,6 +1,7 @@
 ### Instructions
 
-run npm install
+1. Go to the root folder and run the following
+- npm install
 
 start redis server
 
