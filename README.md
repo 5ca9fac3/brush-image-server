@@ -21,12 +21,22 @@ npm install
 ```bash
 npm install -g redis-commander
 ```
-5. Start the node server
+5. Update env
+
+```.env
+PORT
+MONGODB_URI
+REDIS_URL
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_BUCKET_NAME
+```
+6. Start the node server
 
 ```bash
 npm start
 ```
-6. Instead you can run all the service by doing(requires docker),
+7. Instead you can run all the service by doing(requires docker),
 
 ```bash
 docker-compose up
