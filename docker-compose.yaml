@@ -1,0 +1,68 @@
+version: '3.7'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - prog-img-net
+    ports:
+      - 8000:8000
+    environment:
+      - TZ=Asia/Kolkata
+    container_name: server
+    working_dir: /home/apps/prog-img/
+    volumes:
+      - ~/personal/prog-img:/home/apps/prog-img
+      - node_modules:/home/apps/prog-img/node_modules
+    depends_on:
+      mongo_db:
+        condition: service_healthy
+      redis_db:
+        condition: service_started
+      redis-commander:
+        condition: service_started
+    command: npm start
+
+  mongo_db:
+    image: mongo:5.0.8
+    networks:
+      - prog-img-net
+    container_name: mongo_db
+    ports:
+      - 27017:27017
+    volumes:
+      - ~/personal/dbs/mongo:/data/db
+    command: --quiet --logpath /dev/null
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/healthcheck-database --quiet
+
+  redis_db:
+    image: redis:7.0.0
+    networks:
+      - prog-img-net
+    container_name: redis_db
+    volumes:
+      - ~/personal/dbs/redis:/data
+    ports:
+      - 6379:6379
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    networks:
+      - prog-img-net
+    environment:
+      - REDIS_HOSTS=redis:redis_db:6379
+    container_name: redis-commander
+    ports:
+      - 8081:8081
+    depends_on:
+      redis_db:
+        condition: service_started
+
+networks:
+  prog-img-net:
+
+volumes:
+  node_modules:
