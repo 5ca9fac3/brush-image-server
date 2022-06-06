@@ -8,9 +8,9 @@ npm install
 
 2. Install docker and docker-compose 
 
-[docker] https://docs.docker.com/engine/install/
+    [docker] https://docs.docker.com/engine/install/
 
-[docker-compose] https://docs.docker.com/compose/install/
+    [docker-compose] https://docs.docker.com/compose/install/
 
 3. Install redis to your system 
 
