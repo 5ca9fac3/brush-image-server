@@ -1,19 +1,19 @@
 # prog-img
 
-# run npm install
+run npm install
 
-# start redis server
+start redis server
 
-# start mongo database server
+start mongo database server
 
-# run npm install -g redis-commander (optional)
+run npm install -g redis-commander (optional)
 
-# run npm start
+run npm start
 
-# OR
+## OR
 
-# install docker
+install docker
 
-# install docker-compose
+install docker-compose
 
-# run docker-compose up
+run docker-compose up
