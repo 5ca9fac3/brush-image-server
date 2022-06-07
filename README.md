@@ -6,22 +6,21 @@
 npm install
 ```
 
-2. Install docker and docker-compose 
+2. Install docker and docker-compose (optional)
 
     [docker] https://docs.docker.com/engine/install/
 
     [docker-compose] https://docs.docker.com/compose/install/
 
-3. Install redis to your system 
+3. Install redis and mongodb to your system and start the services 
 
-4. Install mongodb to yor system and start the mongo service
 
 ### (Optional) to run redis commader and view redis cache
 
 ```bash
 npm install -g redis-commander
 ```
-5. Update env
+4. Update env
 
 ```.env
 PORT
@@ -31,12 +30,12 @@ AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
 AWS_BUCKET_NAME
 ```
-6. Start the node server
+5. Start the node server
 
 ```bash
 npm start
 ```
-7. Instead you can run all the service by doing(requires docker),
+6. Instead you can run all the service by doing(requires docker),
 
 ```bash
 docker-compose up
