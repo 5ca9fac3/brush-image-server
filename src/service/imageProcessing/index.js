@@ -4,11 +4,11 @@ const { JOB_TYPE } = require('../../constants');
 const { isValidFormatType } = require('../../helpers/imageProcessor');
 
 module.exports = class ImageProcessingService {
-  constructor({ cacheService, s3Service, imageService, queueBackgroundJob }) {
+  constructor({ cacheService, s3Service, imageService, runBackgroundJobs }) {
     this.cacheService = cacheService;
     this.s3Service = s3Service;
-    this.queueBackgroundJob = queueBackgroundJob;
     this.imageService = imageService;
+    this.runBackgroundJobs = runBackgroundJobs;
   }
 
   /**
@@ -86,22 +86,25 @@ module.exports = class ImageProcessingService {
         buffer: resizedBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.resize.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.resize.name, JOB_TYPE.resize.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.resize.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -153,22 +156,25 @@ module.exports = class ImageProcessingService {
         buffer: croppedBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.crop.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.crop.name, JOB_TYPE.crop.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.crop.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -203,22 +209,25 @@ module.exports = class ImageProcessingService {
         buffer: grayscaledBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.grayscale.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.grayscale.name, JOB_TYPE.grayscale.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.grayscale.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -256,22 +265,25 @@ module.exports = class ImageProcessingService {
         buffer: tintedBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.tint.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.tint.name, JOB_TYPE.tint.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.tint.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -311,22 +323,25 @@ module.exports = class ImageProcessingService {
         buffer: rotatedBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.rotate.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.rotate.name, JOB_TYPE.rotate.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.rotate.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -366,22 +381,25 @@ module.exports = class ImageProcessingService {
         buffer: blurredBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.blur.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.blur.name, JOB_TYPE.blur.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.blur.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -421,22 +439,25 @@ module.exports = class ImageProcessingService {
         buffer: sharpenedBuffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.sharpen.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.sharpen.name, JOB_TYPE.sharpen.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.sharpen.name,
+        meta: imageDataWithBufferString,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateS3.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.updateS3.name, JOB_TYPE.updateS3.concurrency, (job, done) => {
-        this.s3Service.updateImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateS3.name,
+        meta: imageData,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.updateImage,
       });
 
-      this.queueBackgroundJob.add(JOB_TYPE.updateRepo.name, { imageData: imageDataWithBufferString });
-      this.queueBackgroundJob.process(JOB_TYPE.updateRepo.name, JOB_TYPE.updateRepo.concurrency, (job, done) => {
-        this.imageService.updateProcessedImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.updateRepo.name,
+        meta: imageDataWithBufferString,
+        className: this.imageService,
+        jobToProcess: this.imageService.updateProcessedImage,
       });
 
       return;
@@ -448,8 +469,8 @@ module.exports = class ImageProcessingService {
 
   /**
    * @description Formats the image to a new image format
-   * @param {String} publicId 
-   * @param {String} formatType 
+   * @param {String} publicId
+   * @param {String} formatType
    * @returns {Void} void
    */
   async format(publicId, formatType) {

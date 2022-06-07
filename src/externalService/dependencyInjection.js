@@ -3,19 +3,19 @@ const { Lifetime, createContainer, asValue, asClass } = require('awilix');
 const { mongoDb } = require('./mongoDb');
 const { uploadImage } = require('./multer');
 const { redis } = require('./redis');
-const { QueueBackgroundJob } = require('./bull');
+const { runBackgroundJobs } = require('./bull');
 const { s3Object } = require('./s3');
 
 /**
  * @description Creates a container with all the dependencies.
- * @returns {Object} The container. 
+ * @returns {Object} The container.
  */
 const Container = () => {
   const container = createContainer();
 
   container.register('mongoDb', asValue(mongoDb));
   container.register('uploadImage', asValue(uploadImage));
-  container.register('queueBackgroundJob', asValue(QueueBackgroundJob));
+  container.register('runBackgroundJobs', asValue(runBackgroundJobs));
   container.register('cache', asValue(redis));
   container.register('s3Object', asValue(s3Object));
 

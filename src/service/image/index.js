@@ -1,16 +1,16 @@
 const { JOB_TYPE } = require('../../constants');
 
 module.exports = class ImageService {
-  constructor({ imageRepository, s3Service, queueBackgroundJob, cacheService }) {
+  constructor({ imageRepository, s3Service, runBackgroundJobs, cacheService }) {
     this.imageRepository = imageRepository;
     this.s3Service = s3Service;
     this.cacheService = cacheService;
-    this.queueBackgroundJob = queueBackgroundJob;
+    this.runBackgroundJobs = runBackgroundJobs;
   }
 
   /**
    * @description Uploads image to S3 bucket and info to databse
-   * @param {Object} file 
+   * @param {Object} file
    * @returns {Object} { publicId }
    */
   async upload(file) {
@@ -33,10 +33,11 @@ module.exports = class ImageService {
         buffer: file.buffer.toString('base64'),
       };
 
-      this.queueBackgroundJob.add(JOB_TYPE.upload.name, { imageData });
-      this.queueBackgroundJob.process(JOB_TYPE.upload.name, JOB_TYPE.upload.concurrency, (job, done) => {
-        this.cacheService.setImage(job.data.imageData);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.upload.name,
+        meta: imageData,
+        className: this.cacheService,
+        jobToProcess: this.cacheService.setImage,
       });
 
       return { publicId: image._id };
@@ -48,18 +49,20 @@ module.exports = class ImageService {
 
   /**
    * @description Downloads the image from S3 bucket
-   * @param {String} publicId 
-   * @param {Response} res 
+   * @param {String} publicId
+   * @param {Response} res
    * @returns {Void} void
    */
   async download(publicId, res) {
     try {
       const image = await this.imageRepository.findById(publicId);
 
-      this.queueBackgroundJob.add(JOB_TYPE.download.name, { image });
-      this.queueBackgroundJob.process(JOB_TYPE.download.name, JOB_TYPE.download.concurrency, (job, done) => {
-        this.s3Service.retrieveImage(job.data.image, res);
-        done();
+      this.runBackgroundJobs({
+        name: JOB_TYPE.download.name,
+        meta: image,
+        className: this.s3Service,
+        jobToProcess: this.s3Service.retrieveImage,
+        res,
       });
 
       return;
@@ -71,7 +74,7 @@ module.exports = class ImageService {
 
   /**
    * @description Updates the database info with processed type
-   * @param {Object} imageData 
+   * @param {Object} imageData
    * @returns {Void} void
    */
   async updateProcessedImage(imageData) {
