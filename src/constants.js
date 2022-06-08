@@ -5,7 +5,6 @@ const JOB_TYPE = {
   updateRepo: { name: 'updateRepo', concurrency: 3 },
   updateS3: { name: 'updateS3', concurrency: 3 },
   download: { name: 'download', concurrency: 3 },
-  compress: { name: 'compress', concurrency: 3 },
 
   rotate: { name: 'rotate', concurrency: 1 },
   resize: { name: 'resize', concurrency: 1 },

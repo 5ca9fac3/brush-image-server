@@ -1,4 +1,5 @@
 const uuid = require('uuid').v4;
+const fs = require('fs');
 
 module.exports = class S3Service {
   constructor({ s3Object }) {
@@ -30,28 +31,31 @@ module.exports = class S3Service {
   /**
    * @description Downloads an image from S3
    * @param {Object} image
-   * @param {Response} res
    * @returns {Void} void
    */
-  async retrieveImage(image, res) {
+  async retrieveImage(image) {
     try {
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${image.accessKey}`,
       };
 
-      res.attachment(`${image.processType || 'original'}-${image.accessKey}`);
-      const fileStream = this.s3Object.getObject(params).createReadStream();
-      fileStream.pipe(res);
+      const { Body } = await this.s3Object.getObject(params).promise();
+
+      const fileName = `./tmp/${image.processType || 'original'}-${image.accessKey}`;
+
+      await fs.writeFileSync(fileName, Body);
+
+      return true;
     } catch (error) {
-      error.meta = { ...error.meta, 's3Service.retrieveImage': { image, res } };
+      error.meta = { ...error.meta, 's3Service.retrieveImage': { image } };
       throw error;
     }
   }
 
   /**
    * @description Updates the image in S3
-   * @param {Object} image 
+   * @param {Object} image
    * @returns {Object} { success }
    */
   async updateImage(image) {

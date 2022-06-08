@@ -13,10 +13,10 @@ Queue.prototype.setHandler = async function (name, handler) {
 
 const QueueBackgroundJob = new Queue('backgroundJobs', jobOptions);
 
-const runBackgroundJobs = async ({ name, meta, className, jobToProcess, res = null }) => {
+const runBackgroundJobs = async ({ name, meta, className, jobToProcess }) => {
   QueueBackgroundJob.add(name, meta);
   QueueBackgroundJob.process(name, JOB_TYPE[name].concurrency, async (job) => {
-    await setImmediate(() => jobToProcess.bind(className).call(this, job.data, res));
+    await setImmediate(() => jobToProcess.bind(className).call(this, job.data));
     return Promise.resolve();
   });
 };

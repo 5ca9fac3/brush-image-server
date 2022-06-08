@@ -50,10 +50,9 @@ module.exports = class ImageService {
   /**
    * @description Downloads the image from S3 bucket
    * @param {String} publicId
-   * @param {Response} res
    * @returns {Void} void
    */
-  async download(publicId, res) {
+  async download(publicId) {
     try {
       const image = await this.imageRepository.findById(publicId);
 
@@ -62,12 +61,11 @@ module.exports = class ImageService {
         meta: image,
         className: this.s3Service,
         jobToProcess: this.s3Service.retrieveImage,
-        res,
       });
 
       return;
     } catch (error) {
-      error.meta = { ...error.meta, 'imageService.download': { publicId, res } };
+      error.meta = { ...error.meta, 'imageService.download': { publicId } };
       throw error;
     }
   }

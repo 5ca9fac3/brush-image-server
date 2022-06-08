@@ -143,7 +143,7 @@ module.exports = class ImageProcessingService {
         throw createError(422, 'Crop height is too large');
       }
 
-      const croppedBuffer = await sharp(file.path).extract(dimensions).toFormat(metaData.format).toBuffer();
+      const croppedBuffer = await sharp(buffer).extract(dimensions).toFormat(metaData.format).toBuffer();
 
       const imageData = {
         ...image,
