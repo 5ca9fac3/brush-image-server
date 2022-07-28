@@ -13,7 +13,9 @@ const uploadFile = async (req, res) => {
 
 const downloadFile = async (req, res) => {
   try {
-    await imageService.download(req.params.publicId);
+    const { name = '' } = req.body || {};
+
+    await imageService.download(req.params.publicId, name);
 
     return res.status(200).json({ success: true });
   } catch (error) {

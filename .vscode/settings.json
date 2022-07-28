@@ -1,0 +1,6 @@
+{
+  "docwriter.hotkey.mac": "⌘ + .",
+  "docwriter.progress.trackClasses": true,
+  "docwriter.progress.trackTypes": true,
+  "docwriter.style": "JSDoc"
+}

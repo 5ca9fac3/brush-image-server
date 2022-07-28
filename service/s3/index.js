@@ -42,7 +42,8 @@ module.exports = class S3Service {
 
       const { Body } = await this.s3Object.getObject(params).promise();
 
-      const fileName = `./tmp/${image.processType || 'original'}-${image.accessKey}`;
+      // const fileName = `./tmp/${image.processType || 'original'}-${image.accessKey}`;
+      const fileName = `./tmp/${image.fileName}`;
 
       await fs.writeFileSync(fileName, Body);
 
@@ -53,11 +54,13 @@ module.exports = class S3Service {
     }
   }
 
-  /**
-   * @description Updates the image in S3
-   * @param {Object} image
-   * @returns {Object} { success }
-   */
+  // /**
+  //  * @description Updates the image in S3
+  //  * @param {Object} image
+  //  * @returns {Object} { success }
+  //  */
+
+  
   async updateImage(image) {
     try {
       const params = {

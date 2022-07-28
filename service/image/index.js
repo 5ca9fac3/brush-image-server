@@ -42,6 +42,8 @@ module.exports = class ImageService {
 
       return { publicId: image._id };
     } catch (error) {
+      // TODO: logger to implemeted
+      // Rollbacks
       error.meta = { ...error.meta, 'imageService.upload': { file } };
       throw error;
     }
@@ -52,7 +54,7 @@ module.exports = class ImageService {
    * @param {String} publicId
    * @returns {Void} void
    */
-  async download(publicId) {
+  async download(publicId, name) {
     try {
       const image = await this.imageRepository.findById(publicId);
 
