@@ -1,11 +1,15 @@
-FROM node:18.0.0
+FROM node:18.12.1
 
 WORKDIR /home/apps/prog-img
 
-COPY package*.json ./
+COPY . .
 
 RUN npm install --no-optional
 
-COPY . .
+RUN npm install -g typescript @types/node
 
 EXPOSE 8000 8000
+
+RUN npm run compile
+
+CMD [ "npm", "start" ]

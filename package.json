@@ -1,27 +1,29 @@
 {
   "name": "prog-img",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "nodemon --trace-warnings src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "tsc",
+    "start": "node dist/index.js",
+    "start:dev": "nodemon"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "awilix": "^7.0.3",
-    "aws-sdk": "^2.1148.0",
-    "bull": "^4.8.3",
-    "dotenv": "^16.0.1",
-    "express": "^4.18.1",
+    "awilix": "^8.0.0",
+    "aws-sdk": "^2.1261.0",
+    "bull": "^4.10.2",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
     "http-error": "^0.0.6",
-    "ioredis": "^5.0.6",
-    "mongoose": "^6.3.5",
-    "multer": "^1.4.4",
-    "nodemon": "^2.0.16",
-    "sharp": "^0.30.6",
-    "uuid": "^8.3.2"
+    "ioredis": "^5.2.4",
+    "mongoose": "^6.7.3",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^2.0.20",
+    "sharp": "^0.31.2",
+    "uuid": "^9.0.0"
   }
 }
