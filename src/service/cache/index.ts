@@ -1,5 +1,4 @@
 import { Redis } from 'ioredis';
-import { ObjectId } from 'mongoose';
 
 import { Image } from '../../interfaces/schema/image';
 
@@ -25,7 +24,7 @@ export class CacheService {
     }
   }
 
-  async getImage(imageId: ObjectId): Promise<Record<string, string>> {
+  async getImage(imageId: string): Promise<Record<string, string>> {
     try {
       const value = await this.cache.hgetall(`${imageId}`);
 

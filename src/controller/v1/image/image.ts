@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongoose';
 import { Request, Response } from 'express';
 
 import { response } from '../../../error/response';
@@ -16,7 +15,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
 export const downloadFile = async (req: Request, res: Response) => {
   try {
-    const resp = await imageService.download(req.params.publicId as unknown as ObjectId);
+    const resp = await imageService.download(req.params.publicId);
 
     return res.status(200).json(resp);
   } catch (error) {

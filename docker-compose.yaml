@@ -13,24 +13,11 @@ services:
       - ~/Developer/Projects/Node/prog-img:/app
       - node_modules:/app/node_modules
     depends_on:
-      mongo_db:
-        condition: service_healthy
       redis_db:
         condition: service_started
       redis-commander:
         condition: service_started
     command: npm start
-
-  mongo_db:
-    image: mongo:5.0.8
-    container_name: mongo_db
-    ports:
-      - 27017:27017
-    volumes:
-      - ~/Developer/dbs/mongo:/data/db
-    command: --quiet --logpath /dev/null
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/healthcheck-database --quiet
 
   redis_db:
     image: redis:7.0.0

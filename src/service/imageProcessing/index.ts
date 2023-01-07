@@ -1,11 +1,10 @@
-import { ObjectId } from 'mongoose';
 import createError from 'http-errors';
 import sharp, { AvailableFormatInfo, FormatEnum, RGBA, Region } from 'sharp';
+import EventEmitter from 'events';
 
 import { JOB_TYPE } from '../../constants';
 import { isValidFormatType } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
-import { S3Service } from '../s3';
 import { ImageService } from '../image';
 import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
 import { TintColor } from '../../interfaces/service/image/tintColor';
@@ -13,25 +12,25 @@ import { General } from '../../interfaces/service/common/general';
 
 interface ImageProcessingServiceOpts {
   cacheService: CacheService;
-  s3Service: S3Service;
   imageService: ImageService;
   runBackgroundJobs: Function;
+  queueEvent: EventEmitter;
 }
 
 export class ImageProcessingService {
   cacheService: CacheService;
-  s3Service: S3Service;
   imageService: ImageService;
   runBackgroundJobs: Function;
+  queueEvent: EventEmitter;
 
   constructor(opts: ImageProcessingServiceOpts) {
     this.cacheService = opts.cacheService;
-    this.s3Service = opts.s3Service;
     this.imageService = opts.imageService;
     this.runBackgroundJobs = opts.runBackgroundJobs;
+    this.queueEvent = opts.queueEvent;
   }
 
-  async getImageData(imageId: ObjectId) {
+  async getImageData(imageId: string) {
     try {
       const imageData = await this.cacheService.getImage(imageId);
 
@@ -53,7 +52,7 @@ export class ImageProcessingService {
     }
   }
 
-  async resize(publicId: ObjectId, width: number, height: number): Promise<General> {
+  async resize(publicId: string, width: number, height: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -78,11 +77,6 @@ export class ImageProcessingService {
 
       const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: resizedBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.resize.name,
@@ -97,18 +91,18 @@ export class ImageProcessingService {
       });
 
       this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
-      });
-
-      this.runBackgroundJobs({
         name: JOB_TYPE.updateRepo.name,
         meta: imageDataWithBufferString,
         className: this.imageService,
         jobToProcess: this.imageService.updateProcessedImage,
       });
+
+      // this.queueEvent.emit('resized', {
+      //   name: JOB_TYPE.updateRepo.name,
+      //   meta: imageDataWithBufferString,
+      //   className: this.imageService,
+      //   jobToProcess: this.imageService.updateProcessedImage,
+      // });
 
       return { success: true, message: 'Image is resized' };
     } catch (error) {
@@ -117,7 +111,7 @@ export class ImageProcessingService {
     }
   }
 
-  async crop(publicId: ObjectId, dimension: Region): Promise<General> {
+  async crop(publicId: string, dimension: Region): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -142,11 +136,6 @@ export class ImageProcessingService {
 
       const croppedBuffer = await sharp(buffer).extract(dimension).toFormat(metaData.format).toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: croppedBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.crop.name,
@@ -158,13 +147,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -181,7 +163,7 @@ export class ImageProcessingService {
     }
   }
 
-  async grayscale(publicId: ObjectId): Promise<General> {
+  async grayscale(publicId: string): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -189,11 +171,6 @@ export class ImageProcessingService {
       const metaData = await this.metaData(buffer);
 
       const grayscaledBuffer = await sharp(buffer).grayscale(true).toFormat(metaData.format).toBuffer();
-
-      const imageData = {
-        ...image,
-        buffer: grayscaledBuffer,
-      };
 
       const imageDataWithBufferString = {
         ...image,
@@ -206,13 +183,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -229,7 +199,7 @@ export class ImageProcessingService {
     }
   }
 
-  async tint(publicId: ObjectId, tintColor: TintColor): Promise<General> {
+  async tint(publicId: string, tintColor: TintColor): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -243,11 +213,6 @@ export class ImageProcessingService {
         .toFormat(metaData.format)
         .toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: tintedBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.tint.name,
@@ -259,13 +224,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -282,7 +240,7 @@ export class ImageProcessingService {
     }
   }
 
-  async rotate(publicId: ObjectId, angle: number): Promise<General> {
+  async rotate(publicId: string, angle: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -295,11 +253,6 @@ export class ImageProcessingService {
 
       const rotatedBuffer = await sharp(buffer).rotate(angle).toFormat(metaData.format).toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: rotatedBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.rotate.name,
@@ -311,13 +264,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -334,7 +280,7 @@ export class ImageProcessingService {
     }
   }
 
-  async blur(publicId: ObjectId, blurPoint: number): Promise<General> {
+  async blur(publicId: string, blurPoint: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -347,11 +293,6 @@ export class ImageProcessingService {
 
       const blurredBuffer = await sharp(buffer).blur(blurPoint).toFormat(metaData.format).toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: blurredBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.blur.name,
@@ -363,13 +304,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -386,7 +320,7 @@ export class ImageProcessingService {
     }
   }
 
-  async sharpen(publicId: ObjectId, sharpenPoint: number): Promise<General> {
+  async sharpen(publicId: string, sharpenPoint: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -399,11 +333,6 @@ export class ImageProcessingService {
 
       const sharpenedBuffer = await sharp(buffer).sharpen(sharpenPoint).toFormat(metaData.format).toBuffer();
 
-      const imageData = {
-        ...image,
-        buffer: sharpenedBuffer,
-      };
-
       const imageDataWithBufferString = {
         ...image,
         processType: JOB_TYPE.sharpen.name,
@@ -415,13 +344,6 @@ export class ImageProcessingService {
         meta: imageDataWithBufferString,
         className: this.cacheService,
         jobToProcess: this.cacheService.setImage,
-      });
-
-      this.runBackgroundJobs({
-        name: JOB_TYPE.updateS3.name,
-        meta: imageData,
-        className: this.s3Service,
-        jobToProcess: this.s3Service.updateImage,
       });
 
       this.runBackgroundJobs({
@@ -438,7 +360,7 @@ export class ImageProcessingService {
     }
   }
 
-  async format(publicId: ObjectId, formatType: keyof FormatEnum | AvailableFormatInfo): Promise<UploadResponse> {
+  async format(publicId: string, formatType: keyof FormatEnum | AvailableFormatInfo): Promise<UploadResponse> {
     try {
       const image = await this.getImageData(publicId);
 
