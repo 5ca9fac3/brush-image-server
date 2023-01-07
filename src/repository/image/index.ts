@@ -1,13 +1,23 @@
+import { Model, ObjectId } from 'mongoose';
+
 import { ImageSchema } from './schema';
+import { IImage } from '../../interfaces/mongo/imageModel';
+import { MongooseConnection } from '../../interfaces/utils/mongoConnection';
+import { Image } from '../../interfaces/schema/image';
+import { UpdateImage } from '../../interfaces/repository/image/updateImage';
+
+interface ImageRepositoryOpts {
+  imageDb: MongooseConnection;
+}
 
 export class ImageRepository {
-  repository: any;
+  repository: typeof Model<IImage>;
 
-  constructor({ mongoDb }) {
-    this.repository = ImageSchema(mongoDb);
+  constructor(opts: ImageRepositoryOpts) {
+    this.repository = ImageSchema(opts.imageDb);
   }
 
-  async create(data) {
+  async create(data: Image): Promise<Image> {
     try {
       const image = await this.repository.create(data);
 
@@ -18,7 +28,7 @@ export class ImageRepository {
     }
   }
 
-  async findById(id) {
+  async findById(id: ObjectId): Promise<Image> {
     try {
       const image = await this.repository.findById(id);
 
@@ -29,9 +39,16 @@ export class ImageRepository {
     }
   }
 
-  async update(id, data) {
+  async update(id: ObjectId, data: UpdateImage): Promise<void> {
     try {
-      await this.repository.updateOne({ _id: id }, data);
+      const updatedData = [
+        {
+          $set: {
+            processType: data.processType,
+          },
+        },
+      ];
+      await this.repository.updateOne({ _id: id }, updatedData);
 
       return;
     } catch (error) {

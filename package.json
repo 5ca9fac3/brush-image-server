@@ -5,13 +5,15 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "compile": "tsc",
-    "start": "node dist/index.js",
-    "start:dev": "nodemon"
+    "start": "nodemon"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "@types/multer": "^1.4.7",
+    "@types/sharp": "^0.31.1"
+  },
   "dependencies": {
     "awilix": "^8.0.0",
     "aws-sdk": "^2.1261.0",

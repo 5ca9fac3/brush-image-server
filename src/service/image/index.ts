@@ -1,19 +1,35 @@
 import { JOB_TYPE } from '../../constants';
 
+import { ImageRepository } from '../../repository/image';
+import { CacheService } from '../cache';
+import { S3Service } from '../s3';
+import { UpdateImage } from '../../interfaces/repository/image/updateImage';
+import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
+import { General } from '../../interfaces/service/common/general';
+import { ObjectId } from 'mongoose';
+import { FileType } from '../../interfaces/service/image/fileType';
+
+interface ImageServiceOpts {
+  imageRepository: ImageRepository;
+  s3Service: S3Service;
+  cacheService: CacheService;
+  runBackgroundJobs: Function;
+}
+
 export class ImageService {
-  imageRepository: any;
-  s3Service: any;
-  cacheService: any;
-  runBackgroundJobs: any;
-  
-  constructor({ imageRepository, s3Service, runBackgroundJobs, cacheService }) {
-    this.imageRepository = imageRepository;
-    this.s3Service = s3Service;
-    this.cacheService = cacheService;
-    this.runBackgroundJobs = runBackgroundJobs;
+  imageRepository: ImageRepository;
+  s3Service: S3Service;
+  cacheService: CacheService;
+  runBackgroundJobs: Function;
+
+  constructor(opts: ImageServiceOpts) {
+    this.imageRepository = opts.imageRepository;
+    this.s3Service = opts.s3Service;
+    this.cacheService = opts.cacheService;
+    this.runBackgroundJobs = opts.runBackgroundJobs;
   }
 
-  async upload(file) {
+  async upload(file: Express.Multer.File | FileType): Promise<UploadResponse> {
     try {
       const store = await this.s3Service.uploadImage(file);
 
@@ -40,16 +56,16 @@ export class ImageService {
         jobToProcess: this.cacheService.setImage,
       });
 
-      return { publicId: image._id };
+      return { success: true, message: 'Uploaded image successfully', data: { publicId: image._id } };
     } catch (error) {
       // TODO: logger to implemeted
-      // Rollbacks
+      // TODO: Rollbacks
       error.meta = { ...error.meta, 'imageService.upload': { file } };
       throw error;
     }
   }
 
-  async download(publicId, name) {
+  async download(publicId: ObjectId): Promise<General> {
     try {
       const image = await this.imageRepository.findById(publicId);
 
@@ -60,24 +76,16 @@ export class ImageService {
         jobToProcess: this.s3Service.retrieveImage,
       });
 
-      return;
+      return { success: true, message: 'Downloaded image successfully' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageService.download': { publicId } };
       throw error;
     }
   }
 
-  async updateProcessedImage(imageData) {
+  async updateProcessedImage(imageData: UpdateImage): Promise<void> {
     try {
-      const updatedData = [
-        {
-          $set: {
-            processType: imageData.processType,
-          },
-        },
-      ];
-
-      await this.imageRepository.update(imageData._id, updatedData);
+      await this.imageRepository.update(imageData._id, imageData);
 
       return;
     } catch (error) {

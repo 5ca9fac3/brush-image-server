@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+import { MongooseConnection } from '../interfaces/utils/mongoConnection';
+
 const options = {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -8,8 +10,21 @@ const options = {
   socketTimeoutMS: process.env.NODE_ENV === 'production' ? 3000000 : 30000,
 };
 
-export const mongoDb = mongoose.createConnection(process.env.MONGODB_URI, options, (err) => {
-  if (!err) {
-    console.log('Connected to MongoDB...');
-  }
-});
+export const connectToDB = ({ name, uri }): MongooseConnection => {
+  const db = mongoose.createConnection(uri, options);
+
+  db.once('open', () => {
+    console.log(`${name} Database connected successfully`);
+  });
+
+  db.on('error', function (error) {
+    console.error(`Error in ${name} MongoDb connection: ${error}`);
+    db.close();
+  });
+
+  db.on('close', function () {
+    console.log(`Closing ${name} Database...`);
+  });
+
+  return db;
+};

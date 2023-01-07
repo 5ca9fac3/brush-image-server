@@ -1,22 +1,31 @@
-export class CacheService {
-  cache: any;
+import { Redis } from 'ioredis';
+import { ObjectId } from 'mongoose';
 
-  constructor({ cache }) {
-    this.cache = cache;
+import { Image } from '../../interfaces/schema/image';
+
+interface CacheServiceOpts {
+  cache: Redis;
+}
+
+export class CacheService {
+  cache: Redis;
+
+  constructor(opts: CacheServiceOpts) {
+    this.cache = opts.cache;
   }
 
-  async setImage(image) {
+  async setImage(image: Image): Promise<void> {
     try {
       await this.cache.hset(`${image._id}`, image);
 
-      return { success: true };
+      return;
     } catch (error) {
       error.meta = { ...error.meta, 'cacheService.setImage': { image } };
       throw error;
     }
   }
 
-  async getImage(imageId) {
+  async getImage(imageId: ObjectId): Promise<Record<string, string>> {
     try {
       const value = await this.cache.hgetall(`${imageId}`);
 

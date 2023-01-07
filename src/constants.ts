@@ -16,3 +16,10 @@ export const JOB_TYPE = {
 };
 
 export const formatTypes = ['png', 'jpg', 'jpeg', 'webp'];
+
+export const database = {
+  PROG_IMG: {
+    name: 'PROG-IMG',
+    uri: process.env.MONGODB_URI,
+  },
+};

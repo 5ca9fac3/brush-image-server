@@ -7,13 +7,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - 8000:8000
-    environment:
-      - TZ=Asia/Kolkata
     container_name: server
-    working_dir: /home/apps/prog-img/
+    working_dir: /app
     volumes:
-      - ~/Developer/Projects/Node/prog-img:/home/apps/prog-img
-      - node_modules:/home/apps/prog-img/node_modules
+      - ~/Developer/Projects/Node/prog-img:/app
+      - node_modules:/app/node_modules
     depends_on:
       mongo_db:
         condition: service_healthy

@@ -1,6 +1,11 @@
+import { Multer } from 'multer';
+
 import { container } from '../utils/dependencyInjection';
 
-export const uploadImage = container.resolve('uploadImage');
+import { ImageService } from './image';
+import { ImageProcessingService } from './imageProcessing';
 
-export const imageService = container.resolve('imageService');
-export const imageProcessingService = container.resolve('imageProcessingService');
+export const uploadImage: Multer = container.resolve('uploadImage');
+
+export const imageService: ImageService = container.resolve('imageService');
+export const imageProcessingService: ImageProcessingService = container.resolve('imageProcessingService');

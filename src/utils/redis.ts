@@ -4,7 +4,7 @@ export const options = { port: +process.env.REDIS_PORT, host: process.env.REDIS_
 
 const redis = new Redis(options);
 
-export const RedisClient = () => {
+export const RedisClient = (): Redis => {
   const client = redis;
 
   client.on('connect', () => {

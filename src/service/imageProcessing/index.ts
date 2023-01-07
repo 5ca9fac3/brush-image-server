@@ -1,23 +1,37 @@
+import { ObjectId } from 'mongoose';
 import createError from 'http-errors';
-import sharp from 'sharp';
+import sharp, { AvailableFormatInfo, FormatEnum, RGBA, Region } from 'sharp';
 
 import { JOB_TYPE } from '../../constants';
 import { isValidFormatType } from '../../helpers/imageProcessor';
+import { CacheService } from '../cache';
+import { S3Service } from '../s3';
+import { ImageService } from '../image';
+import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
+import { TintColor } from '../../interfaces/service/image/tintColor';
+import { General } from '../../interfaces/service/common/general';
+
+interface ImageProcessingServiceOpts {
+  cacheService: CacheService;
+  s3Service: S3Service;
+  imageService: ImageService;
+  runBackgroundJobs: Function;
+}
 
 export class ImageProcessingService {
-  cacheService: any;
-  s3Service: any;
-  imageService: any;
-  runBackgroundJobs: any;
+  cacheService: CacheService;
+  s3Service: S3Service;
+  imageService: ImageService;
+  runBackgroundJobs: Function;
 
-  constructor({ cacheService, s3Service, imageService, runBackgroundJobs }) {
-    this.cacheService = cacheService;
-    this.s3Service = s3Service;
-    this.imageService = imageService;
-    this.runBackgroundJobs = runBackgroundJobs;
+  constructor(opts: ImageProcessingServiceOpts) {
+    this.cacheService = opts.cacheService;
+    this.s3Service = opts.s3Service;
+    this.imageService = opts.imageService;
+    this.runBackgroundJobs = opts.runBackgroundJobs;
   }
 
-  async getImageData(imageId) {
+  async getImageData(imageId: ObjectId) {
     try {
       const imageData = await this.cacheService.getImage(imageId);
 
@@ -28,7 +42,7 @@ export class ImageProcessingService {
     }
   }
 
-  async metaData(image) {
+  async metaData(image: Buffer): Promise<sharp.Metadata> {
     try {
       const metaData = await sharp(image).metadata();
 
@@ -39,7 +53,7 @@ export class ImageProcessingService {
     }
   }
 
-  async resize(publicId, width, height) {
+  async resize(publicId: ObjectId, width: number, height: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -96,37 +110,37 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is resized' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.resize': { publicId, width, height } };
       throw error;
     }
   }
 
-  async crop(publicId, dimensions) {
+  async crop(publicId: ObjectId, dimension: Region): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
-      if (dimensions.width === 0) {
-        dimensions.width = metaData.width;
+      if (dimension.width === 0) {
+        dimension.width = metaData.width;
       }
 
-      if (dimensions.height === 0) {
-        dimensions.height = metaData.height;
+      if (dimension.height === 0) {
+        dimension.height = metaData.height;
       }
 
-      if (dimensions.left + dimensions.width > metaData.width) {
+      if (dimension.left + dimension.width > metaData.width) {
         throw createError(422, 'Crop width is too large');
       }
 
-      if (dimensions.top + dimensions.height > metaData.height) {
+      if (dimension.top + dimension.height > metaData.height) {
         throw createError(422, 'Crop height is too large');
       }
 
-      const croppedBuffer = await sharp(buffer).extract(dimensions).toFormat(metaData.format).toBuffer();
+      const croppedBuffer = await sharp(buffer).extract(dimension).toFormat(metaData.format).toBuffer();
 
       const imageData = {
         ...image,
@@ -160,14 +174,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is cropped' };
     } catch (error) {
-      error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, dimensions } };
+      error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, dimension } };
       throw error;
     }
   }
 
-  async grayscale(publicId) {
+  async grayscale(publicId: ObjectId): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -208,14 +222,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is grayscaled' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.grayscale': { publicId } };
       throw error;
     }
   }
 
-  async tint(publicId, tintColor) {
+  async tint(publicId: ObjectId, tintColor: TintColor): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -224,7 +238,10 @@ export class ImageProcessingService {
 
       const tintOptions = { r: tintColor.red, g: tintColor.green, b: tintColor.blue };
 
-      const tintedBuffer = await sharp(buffer).tint(tintOptions).toFormat(metaData.format).toBuffer();
+      const tintedBuffer = await sharp(buffer)
+        .tint(tintOptions as unknown as RGBA)
+        .toFormat(metaData.format)
+        .toBuffer();
 
       const imageData = {
         ...image,
@@ -258,14 +275,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is tinted' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.tint': { publicId, tintColor } };
       throw error;
     }
   }
 
-  async rotate(publicId, angle) {
+  async rotate(publicId: ObjectId, angle: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -310,14 +327,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is rotated' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.rotate': { publicId, angle } };
       throw error;
     }
   }
 
-  async blur(publicId, blurPoint) {
+  async blur(publicId: ObjectId, blurPoint: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -362,14 +379,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is blurred' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.blur': { publicId, blurPoint } };
       throw error;
     }
   }
 
-  async sharpen(publicId, sharpenPoint) {
+  async sharpen(publicId: ObjectId, sharpenPoint: number): Promise<General> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -414,14 +431,14 @@ export class ImageProcessingService {
         jobToProcess: this.imageService.updateProcessedImage,
       });
 
-      return;
+      return { success: true, message: 'Image is sharpened' };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, sharpenPoint } };
       throw error;
     }
   }
 
-  async format(publicId, formatType) {
+  async format(publicId: ObjectId, formatType: keyof FormatEnum | AvailableFormatInfo): Promise<UploadResponse> {
     try {
       const image = await this.getImageData(publicId);
 
@@ -431,12 +448,11 @@ export class ImageProcessingService {
         throw createError(422, 'Format type must be provided');
       }
 
-      if (!isValidFormatType(formatType)) {
+      if (!isValidFormatType(formatType as unknown as string)) {
         throw createError(422, 'Invalid format type');
       }
 
       const formattedBuffer = await sharp(buffer).toFormat(formatType).toBuffer();
-
       const file = {
         originalname: `${image.fileName.split('.')[0]}.${formatType}`,
         mimetype: `image/${formatType}`,
@@ -444,6 +460,7 @@ export class ImageProcessingService {
       };
 
       const result = await this.imageService.upload(file);
+      result.message = `Image is formatted to ${formatType} type`;
 
       return result;
     } catch (error) {

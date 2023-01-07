@@ -1,14 +1,21 @@
+import { S3 } from 'aws-sdk';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 
-export class S3Service {
-  s3Object: any;
+import { Image } from '../../interfaces/schema/image';
+import { FileType } from '../../interfaces/service/image/fileType';
 
-  constructor({ s3Object }) {
-    this.s3Object = s3Object;
+interface S3ServiceOpts {
+  s3Object: S3;
+}
+export class S3Service {
+  s3Object: S3;
+
+  constructor(opts: S3ServiceOpts) {
+    this.s3Object = opts.s3Object;
   }
 
-  async uploadImage(file) {
+  async uploadImage(file: Express.Multer.File | FileType): Promise<S3.ManagedUpload.SendData> {
     try {
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -25,7 +32,7 @@ export class S3Service {
     }
   }
 
-  async retrieveImage(image) {
+  async retrieveImage(image: Image): Promise<void> {
     try {
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -37,16 +44,16 @@ export class S3Service {
       const directory = process.cwd().split('src')[0];
       const fileName = `${directory}/tmp/${image.processType || 'original'}-${image.accessKey}`;
 
-      await fs.writeFileSync(fileName, Body);
+      await fs.writeFileSync(fileName, Body as unknown as string);
 
-      return true;
+      return;
     } catch (error) {
       error.meta = { ...error.meta, 's3Service.retrieveImage': { image } };
       throw error;
     }
   }
 
-  async updateImage(image) {
+  async updateImage(image: Image): Promise<void> {
     try {
       const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -57,7 +64,7 @@ export class S3Service {
 
       await this.s3Object.putObject(params).promise();
 
-      return { success: true };
+      return;
     } catch (error) {
       error.meta = { ...error.meta, 's3Service.updateImage': { image } };
       throw error;

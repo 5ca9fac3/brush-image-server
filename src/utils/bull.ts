@@ -5,7 +5,14 @@ import { JOB_TYPE } from '../constants';
 
 const jobOptions = { redis: options, settings: { lockDuration: 10000 } };
 
-export const runBackgroundJobs = async ({ name, meta, className, jobToProcess }) => {
+interface RunBackgroundJobsOptions {
+  name: string;
+  meta: Object;
+  className: Function;
+  jobToProcess: Function;
+}
+
+export const runBackgroundJobs = async ({ name, meta, className, jobToProcess }: RunBackgroundJobsOptions) => {
   const QueueBackgroundJob = new Queue(`backgroundJobs_${name}`, jobOptions);
 
   QueueBackgroundJob.add(name, meta);

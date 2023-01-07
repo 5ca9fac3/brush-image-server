@@ -1,8 +1,9 @@
-import multer from 'multer';
+import { Request } from 'express';
+import multer, { FileFilterCallback, Multer } from 'multer';
 
 const storage = multer.memoryStorage();
 
-const fileFilter = (req, file, cb) => {
+const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
   if (file.mimetype.split('/')[0] === 'image') {
     cb(null, true);
   } else {
@@ -10,4 +11,4 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const uploadImage = multer({ storage, fileFilter });
+export const uploadImage: Multer = multer({ storage, fileFilter });

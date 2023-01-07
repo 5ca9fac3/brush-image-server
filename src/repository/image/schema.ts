@@ -1,4 +1,7 @@
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
+
+import { MongooseConnection } from '../../interfaces/utils/mongoConnection';
+import { IImage } from '../../interfaces/mongo/imageModel';
 
 const Schema = new mongoose.Schema({
   fileName: {
@@ -19,6 +22,6 @@ const Schema = new mongoose.Schema({
   },
 });
 
-export const ImageSchema = (mongoDb) => {
-  return mongoDb.model('Image', Schema);
+export const ImageSchema = (mongoDb: MongooseConnection): typeof Model<IImage> => {
+  return mongoDb.model<IImage>('Image', Schema);
 };

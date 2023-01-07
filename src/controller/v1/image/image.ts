@@ -1,23 +1,24 @@
+import { ObjectId } from 'mongoose';
+import { Request, Response } from 'express';
+
 import { response } from '../../../error/response';
 import { imageService } from '../../../service/services';
 
-export const uploadFile = async (req, res) => {
+export const uploadFile = async (req: Request, res: Response) => {
   try {
-    const data = await imageService.upload(req.file);
+    const resp = await imageService.upload(req.file);
 
-    res.status(200).json({ success: true, data });
+    res.status(200).json(resp);
   } catch (error) {
     res.status(error.status || 500).json(response(error));
   }
 };
 
-export const downloadFile = async (req, res) => {
+export const downloadFile = async (req: Request, res: Response) => {
   try {
-    const { name = '' } = req.body || {};
+    const resp = await imageService.download(req.params.publicId as unknown as ObjectId);
 
-    await imageService.download(req.params.publicId, name);
-
-    return res.status(200).json({ success: true });
+    return res.status(200).json(resp);
   } catch (error) {
     res.status(error.status || 500).json(response(error));
   }
