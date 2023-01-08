@@ -3,7 +3,7 @@ import sharp, { AvailableFormatInfo, FormatEnum, RGBA, Region } from 'sharp';
 import EventEmitter from 'events';
 
 import { JOB, event, process } from '../../constants';
-import { isValidFormatType } from '../../helpers/imageProcessor';
+import { extractStorage, isValidFormatType } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
 import { ImageService } from '../image';
 import { TintColor } from '../../interfaces/service/image/tintColor';
@@ -46,7 +46,7 @@ export class ImageProcessingService {
 
   async resize(publicId: string, width: number, height: number): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -70,16 +70,7 @@ export class ImageProcessingService {
 
       const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.resize,
-        buffer: resizedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.resize}_${width}x${height}`);
-      storage.effectsApplied[`${process.resize}_${width}x${height}`] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -92,7 +83,7 @@ export class ImageProcessingService {
 
   async crop(publicId: string, dimension: Region): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -116,18 +107,7 @@ export class ImageProcessingService {
 
       const croppedBuffer = await sharp(buffer).extract(dimension).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.crop,
-        buffer: croppedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.crop}_${dimension.width}x${dimension.height}x${dimension.top}x${dimension.left}`);
-      storage.effectsApplied[
-        `${process.crop}_${dimension.width}x${dimension.height}x${dimension.top}x${dimension.left}`
-      ] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.crop, croppedBuffer, { dimension });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -140,7 +120,7 @@ export class ImageProcessingService {
 
   async grayscale(publicId: string): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -148,16 +128,7 @@ export class ImageProcessingService {
 
       const grayscaledBuffer = await sharp(buffer).grayscale(true).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.grayscale,
-        buffer: grayscaledBuffer.toString('base64'),
-      };
-
-      storage.effects.push(process.grayscale);
-      storage.effectsApplied[process.grayscale] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.grayscale, grayscaledBuffer, {});
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -170,7 +141,7 @@ export class ImageProcessingService {
 
   async tint(publicId: string, tintColor: TintColor): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -183,17 +154,7 @@ export class ImageProcessingService {
         .toFormat(metaData.format)
         .toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.tint,
-        buffer: tintedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.tint}_rgb${tintOptions.r}${tintOptions.g}${tintOptions.b}`);
-      storage.effectsApplied[`${process.tint}_rgb${tintOptions.r}${tintOptions.g}${tintOptions.b}${tintOptions.b}`] =
-        processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.tint, tintedBuffer, { tintOptions });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -206,7 +167,7 @@ export class ImageProcessingService {
 
   async rotate(publicId: string, angle: number): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -218,16 +179,7 @@ export class ImageProcessingService {
 
       const rotatedBuffer = await sharp(buffer).rotate(angle).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.rotate,
-        buffer: rotatedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.rotate}_${angle}`);
-      storage.effectsApplied[`${process.rotate}_${angle}`] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.rotate, rotatedBuffer, { angle });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -240,7 +192,7 @@ export class ImageProcessingService {
 
   async blur(publicId: string, blurPoint: number): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -252,16 +204,7 @@ export class ImageProcessingService {
 
       const blurredBuffer = await sharp(buffer).blur(blurPoint).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.blur,
-        buffer: blurredBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.blur}_${blurPoint}`);
-      storage.effectsApplied[`${process.blur}_${blurPoint}`] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.blur, blurredBuffer, { blurPoint });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -274,7 +217,7 @@ export class ImageProcessingService {
 
   async sharpen(publicId: string, sharpenPoint: number): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -286,16 +229,7 @@ export class ImageProcessingService {
 
       const sharpenedBuffer = await sharp(buffer).sharpen(sharpenPoint).toFormat(metaData.format).toBuffer();
 
-      const processedData = {
-        ...image,
-        processType: process.sharpen,
-        buffer: sharpenedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.sharpen}_${sharpenPoint}`);
-      storage.effectsApplied[`${process.sharpen}_${sharpenPoint}`] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.sharpen, sharpenedBuffer, { sharpenPoint });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
@@ -308,7 +242,7 @@ export class ImageProcessingService {
 
   async format(publicId: string, formatType: keyof FormatEnum | AvailableFormatInfo): Promise<General> {
     try {
-      const storage = await this.getImageData(publicId);
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
 
       const buffer = Buffer.from(image.buffer, 'base64');
@@ -323,15 +257,9 @@ export class ImageProcessingService {
 
       const formattedBuffer = await sharp(buffer).toFormat(formatType).toBuffer();
 
-      const processedData = {
-        fileName: `${image.fileName.split('.')[0]}.${formatType}`,
-        buffer: formattedBuffer.toString('base64'),
-      };
-
-      storage.effects.push(`${process.format}`);
-      storage.effectsApplied[`${process.format}`] = processedData;
-      storage.currentState = processedData;
-      storage.effectsIdx += 1;
+      storage = extractStorage(storage, image, process.format, formattedBuffer, {
+        formatType: formatType as unknown as string,
+      });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
 
