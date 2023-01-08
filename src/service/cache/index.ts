@@ -1,36 +1,32 @@
 import { Redis } from 'ioredis';
 
-import { Image } from '../../interfaces/schema/image';
-
-interface CacheServiceOpts {
-  cache: Redis;
-}
+import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
 
 export class CacheService {
   cache: Redis;
 
-  constructor(opts: CacheServiceOpts) {
+  constructor(opts: ConstructorOpts) {
     this.cache = opts.cache;
   }
 
-  async setImage(image: Image): Promise<void> {
+  async setData(storage: Storage): Promise<void> {
     try {
-      await this.cache.hset(`${image._id}`, image);
+      await this.cache.set(`${storage._id}`, JSON.stringify(storage));
 
       return;
     } catch (error) {
-      error.meta = { ...error.meta, 'cacheService.setImage': { image } };
+      error.meta = { ...error.meta, 'cacheService.setData': { storage } };
       throw error;
     }
   }
 
-  async getImage(imageId: string): Promise<Record<string, string>> {
+  async getData(storageId: string): Promise<Record<string, string>> {
     try {
-      const value = await this.cache.hgetall(`${imageId}`);
+      const value = await this.cache.get(`${storageId}`);
 
-      return value;
+      return JSON.parse(value);
     } catch (error) {
-      error.meta = { ...error.meta, 'cacheService.getImage': { imageId } };
+      error.meta = { ...error.meta, 'cacheService.getData': { storageId } };
       throw error;
     }
   }

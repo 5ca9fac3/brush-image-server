@@ -1,48 +1,45 @@
+import EventEmitter from 'events';
 import fs from 'fs';
 import { v4 as uuid } from 'uuid';
 
-import { JOB_TYPE } from '../../constants';
+import { JOB, event } from '../../constants';
 
 import { CacheService } from '../cache';
-import { UpdateImage } from '../../interfaces/schema/updateImage';
 import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
 import { General } from '../../interfaces/service/common/general';
 import { FileType } from '../../interfaces/service/image/fileType';
-
-interface ImageServiceOpts {
-  cacheService: CacheService;
-  runBackgroundJobs: Function;
-}
+import { Image } from '../../interfaces/schema/image';
+import { Storage } from '../../interfaces/schema/storage';
+import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
 
 export class ImageService {
   cacheService: CacheService;
-  runBackgroundJobs: Function;
+  queueEvent: EventEmitter;
 
-  constructor(opts: ImageServiceOpts) {
+  constructor(opts: ConstructorOpts) {
     this.cacheService = opts.cacheService;
-    this.runBackgroundJobs = opts.runBackgroundJobs;
+    this.queueEvent = opts.queueEvent;
   }
 
   async upload(file: Express.Multer.File | FileType): Promise<UploadResponse> {
     try {
-      const imageData = {
-        _id: uuid(),
-        mimeType: file.mimetype,
+      const image: Image = {
         fileName: file.originalname,
         buffer: file.buffer.toString('base64'),
       };
 
-      this.runBackgroundJobs({
-        name: JOB_TYPE.upload.name,
-        meta: imageData,
-        className: this.cacheService,
-        jobToProcess: this.cacheService.setImage,
-      });
+      const storage: Storage = {
+        _id: uuid(),
+        effects: ['original'],
+        effectsIdx: 0,
+        currentState: image,
+        effectsApplied: { original: image },
+      };
 
-      return { success: true, message: 'Uploaded image successfully', data: { publicId: imageData._id } };
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.upload.name, { storage });
+
+      return { success: true, message: 'Uploaded image successfully', data: { publicId: storage._id } };
     } catch (error) {
-      // TODO: logger to implemeted
-      // TODO: Rollbacks
       error.meta = { ...error.meta, 'imageService.upload': { file } };
       throw error;
     }
@@ -50,10 +47,14 @@ export class ImageService {
 
   async download(publicId: string): Promise<General> {
     try {
-      const image = await this.cacheService.getImage(publicId);
+      const storage = (await this.cacheService.getData(publicId)) as unknown as Storage;
+      const image = storage.currentState;
 
       const directory = process.cwd().split('src')[0];
-      const fileName = `${directory}/tmp/${image.processType || 'original'}-${uuid()}.${image.mimeType.split('/')[1]}`;
+      const [originalName, extension] = image.fileName.split('.');
+      const fileName = `${directory}/tmp/${
+        image.processType ? `${image.processType}-` : ''
+      }${originalName}-${uuid()}.${extension}`;
 
       const buffer = Buffer.from(image.buffer, 'base64');
 
@@ -66,18 +67,46 @@ export class ImageService {
     }
   }
 
-  async updateProcessedImage(imageData: UpdateImage): Promise<void> {
+  async undo(publicId: string): Promise<UploadResponse> {
     try {
-      this.runBackgroundJobs({
-        name: JOB_TYPE.upload.name,
-        meta: imageData,
-        className: this.cacheService,
-        jobToProcess: this.cacheService.setImage,
-      });
+      const storage = (await this.cacheService.getData(publicId)) as unknown as Storage;
 
-      return;
+      if (storage.effectsIdx > 0) {
+        storage.effectsIdx -= 1;
+      }
+
+      const effects = storage.effects;
+      const idx = storage.effectsIdx;
+      const currentState = storage.effectsApplied[effects[idx]];
+      storage.currentState = currentState;
+
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+
+      return { success: true, message: 'Previous effect applied', data: { publicId: storage._id } };
     } catch (error) {
-      error.meta = { ...error.meta, 'imageService.updateProcessedImage': { imageData } };
+      error.meta = { ...error.meta, 'imageService.undo': { publicId } };
+      throw error;
+    }
+  }
+
+  async redo(publicId: string): Promise<UploadResponse> {
+    try {
+      const storage = (await this.cacheService.getData(publicId)) as unknown as Storage;
+
+      if (storage.effectsIdx !== storage.effects.length - 1) {
+        storage.effectsIdx += 1;
+      }
+
+      const effects = storage.effects;
+      const idx = storage.effectsIdx;
+      const currentState = storage.effectsApplied[effects[idx]];
+      storage.currentState = currentState;
+
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+
+      return { success: true, message: 'Previous effect applied', data: { publicId: storage._id } };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageService.redo': { publicId } };
       throw error;
     }
   }

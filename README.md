@@ -12,7 +12,7 @@ npm install
 
     [docker-compose] https://docs.docker.com/compose/install/
 
-3. Install redis and mongodb to your system and start the services 
+3. Install redis to your system and start the service 
 
 
 4. Optional to run redis commader and view redis cache
@@ -23,12 +23,10 @@ npm install -g redis-commander
 5. Update env
 
 ```.env
+NODE_ENV
 PORT
-MONGODB_URI
-REDIS_URL
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_BUCKET_NAME
+REDIS_HOST
+REDIS_PORT
 ```
 6. Start the node server
 
