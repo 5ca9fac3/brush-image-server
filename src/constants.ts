@@ -1,7 +1,6 @@
 export const JOB = {
-  upload: { name: 'upload', concurrency: 3 },
+  cacheStorage: { name: 'cacheStorage', concurrency: 3 },
   download: { name: 'download', concurrency: 3 },
-  updateStorage: { name: 'updateStorage', concurrency: 3 },
 };
 
 export const formatTypes = ['png', 'jpg', 'jpeg', 'webp'];

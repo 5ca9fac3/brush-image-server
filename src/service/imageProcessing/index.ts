@@ -72,7 +72,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is resized' };
     } catch (error) {
@@ -109,7 +109,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.crop, croppedBuffer, { dimension });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is cropped' };
     } catch (error) {
@@ -130,7 +130,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.grayscale, grayscaledBuffer, {});
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is grayscaled' };
     } catch (error) {
@@ -156,7 +156,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.tint, tintedBuffer, { tintOptions });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is tinted' };
     } catch (error) {
@@ -181,7 +181,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.rotate, rotatedBuffer, { angle });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is rotated' };
     } catch (error) {
@@ -206,7 +206,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.blur, blurredBuffer, { blurPoint });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is blurred' };
     } catch (error) {
@@ -231,7 +231,7 @@ export class ImageProcessingService {
 
       storage = extractStorage(storage, image, process.sharpen, sharpenedBuffer, { sharpenPoint });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Image is sharpened' };
     } catch (error) {
@@ -261,7 +261,7 @@ export class ImageProcessingService {
         formatType: formatType as unknown as string,
       });
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: `Image formatted to ${formatType}` };
     } catch (error) {

@@ -36,7 +36,7 @@ export class ImageService {
         effectsApplied: { original: image },
       };
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.upload.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Uploaded image successfully', data: { publicId: storage._id } };
     } catch (error) {
@@ -80,7 +80,7 @@ export class ImageService {
       const currentState = storage.effectsApplied[effects[idx]];
       storage.currentState = currentState;
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Previous effect applied', data: { publicId: storage._id } };
     } catch (error) {
@@ -102,7 +102,7 @@ export class ImageService {
       const currentState = storage.effectsApplied[effects[idx]];
       storage.currentState = currentState;
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.updateStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Previous effect applied', data: { publicId: storage._id } };
     } catch (error) {
