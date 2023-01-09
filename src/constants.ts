@@ -12,6 +12,7 @@ export const event = {
 };
 
 export const process = {
+  original: 'original',
   rotate: 'rotate',
   resize: 'resize',
   crop: 'crop',

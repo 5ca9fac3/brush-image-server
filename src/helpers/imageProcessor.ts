@@ -62,10 +62,17 @@ export const extractStorage = (
       break;
     case process.format:
       effectsKey = `${process.format}_${options.formatType}_${uuid()}`;
+      processedData.fileName = `${processedData.fileName.split('.')[0]}.${options.formatType}`;
       break;
     default:
       throw new Error('Undefined process type');
   }
+
+  if (storage.effects[storage.effectsIdx] === process.original && storage.effects.length > 1) {
+    storage.effects = [process.original];
+    storage.effectsApplied = { [process.original]: storage.effectsApplied[process.original] };
+  }
+
   storage.effects.push(effectsKey);
   storage.effectsApplied[effectsKey] = processedData;
 
