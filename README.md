@@ -20,7 +20,7 @@ npm install
 ```bash
 npm install -g redis-commander
 ```
-5. Update env
+5. Update env, add "tmp" folder at the root of the project
 
 ```.env
 NODE_ENV

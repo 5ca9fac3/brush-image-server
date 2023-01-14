@@ -20,7 +20,7 @@ services:
     command: npm start
 
   redis_db:
-    image: redis:7.0.0
+    image: redis
     container_name: redis_db
     volumes:
       - ~/Developer/dbs/redis:/data

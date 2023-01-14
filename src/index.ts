@@ -4,16 +4,15 @@ config();
 import express from 'express';
 const app = express();
 
-import { router } from './controller/router';
+import { _init } from './controller';
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-router(app);
+_init(app);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });
 
 // TODO: implement pino logger
-// TODO: implement rollbacks

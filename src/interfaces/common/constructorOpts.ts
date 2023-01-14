@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import { Multer } from 'multer';
 import { Redis } from 'ioredis';
 
 import { CacheService } from '../../service/cache';
@@ -11,4 +12,5 @@ export interface ConstructorOpts {
   imageService?: ImageService;
   imageProcessingService?: ImageProcessingService;
   queueEvent?: EventEmitter;
+  uploadImage?: Multer;
 }
