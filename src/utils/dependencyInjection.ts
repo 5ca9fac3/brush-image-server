@@ -5,7 +5,6 @@ import { RedisClient } from './redis';
 import { queueEvent } from '../backgroundJobs/bull';
 
 import { services } from '../service';
-import { v1Controllers } from '../controller/v1/v1Controller';
 
 const redis = RedisClient();
 
@@ -19,11 +18,6 @@ const Container = (): AwilixContainer => {
   /* Registering all the services in the container. */
   Object.keys(services).forEach((service) => {
     container.register(service, asClass(services[service], { lifetime: Lifetime.SINGLETON }));
-  });
-
-  /* Registering all the v1 controllers in the container. */
-  Object.keys(v1Controllers).forEach((controller) => {
-    container.register(controller, asClass(v1Controllers[controller], { lifetime: Lifetime.SINGLETON }));
   });
 
   return container;
