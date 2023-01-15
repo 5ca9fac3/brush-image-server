@@ -3,6 +3,7 @@ import { Lifetime, createContainer, asValue, asClass, AwilixContainer } from 'aw
 import { uploadImage } from './multer';
 import { RedisClient } from './redis';
 import { queueEvent } from '../backgroundJobs/bull';
+import { workerEvent } from '../backgroundJobs/workers';
 
 import { services } from '../service';
 
@@ -14,6 +15,7 @@ const Container = (): AwilixContainer => {
   container.register('uploadImage', asValue(uploadImage));
   container.register('cache', asValue(redis));
   container.register('queueEvent', asValue(queueEvent));
+  container.register('workerEvent', asValue(workerEvent));
 
   /* Registering all the services in the container. */
   Object.keys(services).forEach((service) => {

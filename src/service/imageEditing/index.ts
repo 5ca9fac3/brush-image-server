@@ -1,26 +1,32 @@
 import createError from 'http-errors';
-import sharp, { AvailableFormatInfo, FormatEnum, RGBA, Region } from 'sharp';
+import sharp from 'sharp';
 import EventEmitter from 'events';
 
-import { JOB, event, process } from '../../constants';
+import { JOB, event, process, workers } from '../../constants';
 import { extractStorage, isValidFormatType } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
-import { ImageService } from '../image';
-import { TintColor } from '../../interfaces/service/image/tintColor';
-import { General } from '../../interfaces/service/common/general';
 import { Storage } from '../../interfaces/schema/storage';
 import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
-import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
+import { General } from '../../interfaces/service/common/general';
 
-export class ImageProcessingService {
+export class ImageEditingService {
   cacheService: CacheService;
-  imageService: ImageService;
-  queueEvent: EventEmitter;
+  workerEvent: EventEmitter;
 
   constructor(opts: ConstructorOpts) {
     this.cacheService = opts.cacheService;
-    this.imageService = opts.imageService;
-    this.queueEvent = opts.queueEvent;
+    this.workerEvent = opts.workerEvent;
+  }
+
+  async getImageData(storageId: string): Promise<Storage> {
+    try {
+      const data = (await this.cacheService.getData(storageId)) as unknown as Storage;
+
+      return data;
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageEditing.getImageData': { storageId } };
+      throw error;
+    }
   }
 
   async metaData(image: Buffer): Promise<sharp.Metadata> {
@@ -29,36 +35,45 @@ export class ImageProcessingService {
 
       return metaData;
     } catch (error) {
-      error.meta = { ...error.meta, 'imageProcessing.metaData': { image } };
+      error.meta = { ...error.meta, 'imageEditing.metaData': { image } };
       throw error;
     }
   }
 
-  async resize({
-    storage,
-    publicId,
-    width,
-    height,
-  }: {
-    storage: Storage;
-    publicId: string;
-    width: number;
-    height: number;
-  }): Promise<UploadResponse> {
+  async resize(publicId: string, width: number, height: number): Promise<General> {
     try {
+      let storage = await this.getImageData(publicId);
       const image = storage.currentState;
+
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
-      const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
+      if (width === 0) {
+        width = metaData.width;
+      }
 
-      storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
+      if (height === 0) {
+        height = metaData.height;
+      }
 
-      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
+      if (width > metaData.width) {
+        throw createError(422, 'Width is too large');
+      }
 
-      return { success: true, message: 'Image is resized', image: storage.currentState };
+      if (height > metaData.height) {
+        throw createError(422, 'Height is too large');
+      }
+
+      const data = { width, height, storage, publicId };
+      // const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
+
+      // storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
+
+      this.workerEvent.emit(workers.RESIZE_WORKER, { data });
+
+      return { success: true, message: 'Image will be resized shortly' };
     } catch (error) {
-      error.meta = { ...error.meta, 'imageProcessing.resize': { storage, publicId, width, height } };
+      error.meta = { ...error.meta, 'imageEditing.resize': { publicId, width, height } };
       throw error;
     }
   }
@@ -95,7 +110,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is cropped' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, dimension } };
+  //     error.meta = { ...error.meta, 'imageEditing.crop': { publicId, dimension } };
   //     throw error;
   //   }
   // }
@@ -116,7 +131,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is grayscaled' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.grayscale': { publicId } };
+  //     error.meta = { ...error.meta, 'imageEditing.grayscale': { publicId } };
   //     throw error;
   //   }
   // }
@@ -142,7 +157,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is tinted' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.tint': { publicId, tintColor } };
+  //     error.meta = { ...error.meta, 'imageEditing.tint': { publicId, tintColor } };
   //     throw error;
   //   }
   // }
@@ -167,7 +182,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is rotated' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.rotate': { publicId, angle } };
+  //     error.meta = { ...error.meta, 'imageEditing.rotate': { publicId, angle } };
   //     throw error;
   //   }
   // }
@@ -192,7 +207,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is blurred' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.blur': { publicId, blurPoint } };
+  //     error.meta = { ...error.meta, 'imageEditing.blur': { publicId, blurPoint } };
   //     throw error;
   //   }
   // }
@@ -217,7 +232,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: 'Image is sharpened' };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, sharpenPoint } };
+  //     error.meta = { ...error.meta, 'imageEditing.sharpen': { publicId, sharpenPoint } };
   //     throw error;
   //   }
   // }
@@ -247,7 +262,7 @@ export class ImageProcessingService {
 
   //     return { success: true, message: `Image formatted to ${formatType}` };
   //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.format': { publicId, formatType } };
+  //     error.meta = { ...error.meta, 'imageEditing.format': { publicId, formatType } };
   //     throw error;
   //   }
   // }

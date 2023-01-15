@@ -1,4 +1,4 @@
 import { ImageController } from './image';
-import { ImageProcessingController } from './imageProcessing';
+import { ImageEditingController } from './imageEditing';
 
-export const V1Controllers = [ImageController, ImageProcessingController];
+export const V1Controllers = [ImageController, ImageEditingController];

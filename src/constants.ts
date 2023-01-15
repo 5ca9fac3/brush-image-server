@@ -10,6 +10,10 @@ export const event = {
   PROCESS: 'process',
 };
 
+export const workers = {
+  RESIZE_WORKER: 'RESIZE_WORKER',
+};
+
 export const process = {
   original: 'original',
   rotate: 'rotate',
