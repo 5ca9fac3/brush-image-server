@@ -64,12 +64,12 @@ export class ImageEditingService {
         throw createError(422, 'Height is too large');
       }
 
-      const data = { width, height, storage, publicId };
+      const data = { width, height, storage, publicId, imageProcess: process.resize };
       // const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
 
       // storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
 
-      this.workerEvent.emit(workers.RESIZE_WORKER, { data });
+      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be resized shortly' };
     } catch (error) {

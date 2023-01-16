@@ -11,7 +11,8 @@ export const event = {
 };
 
 export const workers = {
-  RESIZE_WORKER: 'RESIZE_WORKER',
+  PROCESS_IMAGE: 'PROCESS_IMAGE',
+  EMIT_DATA: 'EMIT_DATA',
 };
 
 export const process = {

@@ -5,7 +5,8 @@ WORKDIR /app
 COPY package.json ./
 
 RUN npm install -g typescript \
-    && npm install
+    && npm install \
+    && npm install -g socket.io
 
 COPY . .
 
