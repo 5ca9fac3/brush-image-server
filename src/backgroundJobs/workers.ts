@@ -7,14 +7,11 @@ import { socket } from '../index';
 export const workerEvent = new EventEmitter();
 
 workerEvent.on(workers.PROCESS_IMAGE, (meta) => {
-  console.log(`🚀 ~ file: workers.ts:10 ~ workerEvent.on ~ meta`, meta);
   const fileName = `${process.cwd()}/dist/workerThreads/processImage.js`;
   const worker = new Worker(fileName, { workerData: meta.data });
 
   worker.on('message', (meta) => {
-    if (meta) {
-      workerEvent.emit(workers.EMIT_DATA, meta);
-    }
+    workerEvent.emit(workers.EMIT_DATA, meta);
   });
 
   worker.on('error', (error) => {
@@ -22,7 +19,7 @@ workerEvent.on(workers.PROCESS_IMAGE, (meta) => {
   });
 });
 
-workerEvent.on(workers.EMIT_DATA, (meta) => {
-  // socket.emit(meta.data.publicId, meta);
-  socket.emit('message', meta);
-});
+// workerEvent.on(workers.EMIT_DATA, (meta) => {
+//   console.log(`🚀 ~ file: workers.ts:27 ~ workerEvent.on ~ meta.data.publicId`, meta.data.publicId);
+//   socket.to().emit(meta.data.publicId, meta);
+// });

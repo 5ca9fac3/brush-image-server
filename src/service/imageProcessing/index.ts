@@ -55,7 +55,6 @@ export class ImageProcessingService {
       storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
-      console.log(`🚀 ~ file: index.ts:58 ~ ImageProcessingService ~ queueEvent`);
 
       return { success: true, message: 'Image is resized', data: { publicId }, image: storage.currentState };
     } catch (error) {
