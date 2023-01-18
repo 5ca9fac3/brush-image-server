@@ -1,16 +1,13 @@
-import createError from 'http-errors';
-import sharp, { AvailableFormatInfo, FormatEnum, RGBA, Region } from 'sharp';
+import sharp, { RGBA } from 'sharp';
 import EventEmitter from 'events';
 
 import { JOB, event, process } from '../../constants';
-import { extractStorage, isValidFormatType } from '../../helpers/imageProcessor';
+import { extractStorage } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
 import { ImageService } from '../image';
-import { TintColor } from '../../interfaces/service/image/tintColor';
-import { General } from '../../interfaces/service/common/general';
-import { Storage } from '../../interfaces/schema/storage';
 import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
 import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
+import { ProcessorParams } from '../../interfaces/service/common/processorParams';
 
 export class ImageProcessingService {
   cacheService: CacheService;
@@ -34,221 +31,165 @@ export class ImageProcessingService {
     }
   }
 
-  async resize({
-    storage,
-    publicId,
-    width,
-    height,
-  }: {
-    storage: Storage;
-    publicId: string;
-    width: number;
-    height: number;
-  }): Promise<UploadResponse> {
+  async resize({ storage, publicId, options }: ProcessorParams): Promise<UploadResponse> {
     try {
       const image = storage.currentState;
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
-      const resizedBuffer = await sharp(buffer).resize(width, height).toFormat(metaData.format).toBuffer();
+      const resizedBuffer = await sharp(buffer)
+        .resize(options.width, options.height)
+        .toFormat(metaData.format)
+        .toBuffer();
 
-      storage = extractStorage(storage, image, process.resize, resizedBuffer, { width, height });
+      storage = extractStorage(storage, image, process.resize, resizedBuffer, options);
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { success: true, message: 'Image is resized', data: { publicId }, image: storage.currentState };
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is resized' };
     } catch (error) {
-      error.meta = { ...error.meta, 'imageProcessing.resize': { storage, publicId, width, height } };
+      error.meta = { ...error.meta, 'imageProcessing.resize': { storage, publicId, options } };
       throw error;
     }
   }
 
-  // async crop(publicId: string, dimension: Region): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
+  async crop({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
+      const croppedBuffer = await sharp(buffer).extract(options.dimension).toFormat(metaData.format).toBuffer();
 
-  //     if (dimension.width === 0) {
-  //       dimension.width = metaData.width;
-  //     }
+      storage = extractStorage(storage, image, process.crop, croppedBuffer, options);
 
-  //     if (dimension.height === 0) {
-  //       dimension.height = metaData.height;
-  //     }
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     if (dimension.left + dimension.width > metaData.width) {
-  //       throw createError(422, 'Crop width is too large');
-  //     }
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is cropped' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, options } };
+      throw error;
+    }
+  }
 
-  //     if (dimension.top + dimension.height > metaData.height) {
-  //       throw createError(422, 'Crop height is too large');
-  //     }
+  async grayscale({ publicId, storage }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  //     const croppedBuffer = await sharp(buffer).extract(dimension).toFormat(metaData.format).toBuffer();
+      const grayscaledBuffer = await sharp(buffer).grayscale(true).toFormat(metaData.format).toBuffer();
 
-  //     storage = extractStorage(storage, image, process.crop, croppedBuffer, { dimension });
+      storage = extractStorage(storage, image, process.grayscale, grayscaledBuffer, {});
 
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     return { success: true, message: 'Image is cropped' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, dimension } };
-  //     throw error;
-  //   }
-  // }
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is grayscaled' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.grayscale': { publicId } };
+      throw error;
+    }
+  }
 
-  // async grayscale(publicId: string): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
+  async tint({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
+      const tintedBuffer = await sharp(buffer)
+        .tint(options.tintOptions as unknown as RGBA)
+        .toFormat(metaData.format)
+        .toBuffer();
 
-  //     const grayscaledBuffer = await sharp(buffer).grayscale(true).toFormat(metaData.format).toBuffer();
+      storage = extractStorage(storage, image, process.tint, tintedBuffer, options);
 
-  //     storage = extractStorage(storage, image, process.grayscale, grayscaledBuffer, {});
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is tinted' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.tint': { publicId, options } };
+      throw error;
+    }
+  }
 
-  //     return { success: true, message: 'Image is grayscaled' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.grayscale': { publicId } };
-  //     throw error;
-  //   }
-  // }
+  async rotate({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  // async tint(publicId: string, tintColor: TintColor): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
+      const rotatedBuffer = await sharp(buffer).rotate(options.angle).toFormat(metaData.format).toBuffer();
 
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
+      storage = extractStorage(storage, image, process.rotate, rotatedBuffer, options);
 
-  //     const tintOptions = { r: tintColor.red, g: tintColor.green, b: tintColor.blue };
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     const tintedBuffer = await sharp(buffer)
-  //       .tint(tintOptions as unknown as RGBA)
-  //       .toFormat(metaData.format)
-  //       .toBuffer();
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is rotated' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.rotate': { publicId, options } };
+      throw error;
+    }
+  }
 
-  //     storage = extractStorage(storage, image, process.tint, tintedBuffer, { tintOptions });
+  async blur({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
+      const blurredBuffer = await sharp(buffer).blur(options.blurPoint).toFormat(metaData.format).toBuffer();
 
-  //     return { success: true, message: 'Image is tinted' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.tint': { publicId, tintColor } };
-  //     throw error;
-  //   }
-  // }
+      storage = extractStorage(storage, image, process.blur, blurredBuffer, options);
 
-  // async rotate(publicId: string, angle: number): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is blurred' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.blur': { publicId, options } };
+      throw error;
+    }
+  }
 
-  //     if (angle === 0) {
-  //       throw createError(422, 'Angle must be greater than 0');
-  //     }
+  async sharpen({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
+      const metaData = await this.metaData(buffer);
 
-  //     const rotatedBuffer = await sharp(buffer).rotate(angle).toFormat(metaData.format).toBuffer();
+      const sharpenedBuffer = await sharp(buffer).sharpen(options.sharpenPoint).toFormat(metaData.format).toBuffer();
 
-  //     storage = extractStorage(storage, image, process.rotate, rotatedBuffer, { angle });
+      storage = extractStorage(storage, image, process.sharpen, sharpenedBuffer, options);
 
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     return { success: true, message: 'Image is rotated' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.rotate': { publicId, angle } };
-  //     throw error;
-  //   }
-  // }
+      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is sharpened' };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, options } };
+      throw error;
+    }
+  }
 
-  // async blur(publicId: string, blurPoint: number): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
+  async format({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
+    try {
+      const image = storage.currentState;
+      const buffer = Buffer.from(image.buffer, 'base64');
 
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
+      const formattedBuffer = await sharp(buffer).toFormat(options.formatType).toBuffer();
 
-  //     if (!blurPoint) {
-  //       throw createError(422, 'Blur point must be greater than 0');
-  //     }
+      storage = extractStorage(storage, image, process.format, formattedBuffer, options);
 
-  //     const blurredBuffer = await sharp(buffer).blur(blurPoint).toFormat(metaData.format).toBuffer();
+      this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-  //     storage = extractStorage(storage, image, process.blur, blurredBuffer, { blurPoint });
-
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
-
-  //     return { success: true, message: 'Image is blurred' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.blur': { publicId, blurPoint } };
-  //     throw error;
-  //   }
-  // }
-
-  // async sharpen(publicId: string, sharpenPoint: number): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
-
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-  //     const metaData = await this.metaData(buffer);
-
-  //     if (!sharpenPoint) {
-  //       throw createError(422, 'Sharpen point must be greater than 0');
-  //     }
-
-  //     const sharpenedBuffer = await sharp(buffer).sharpen(sharpenPoint).toFormat(metaData.format).toBuffer();
-
-  //     storage = extractStorage(storage, image, process.sharpen, sharpenedBuffer, { sharpenPoint });
-
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
-
-  //     return { success: true, message: 'Image is sharpened' };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, sharpenPoint } };
-  //     throw error;
-  //   }
-  // }
-
-  // async format(publicId: string, formatType: keyof FormatEnum | AvailableFormatInfo): Promise<General> {
-  //   try {
-  //     let storage = await this.getImageData(publicId);
-  //     const image = storage.currentState;
-
-  //     const buffer = Buffer.from(image.buffer, 'base64');
-
-  //     if (!formatType) {
-  //       throw createError(422, 'Format type must be provided');
-  //     }
-
-  //     if (!isValidFormatType(formatType as unknown as string)) {
-  //       throw createError(422, 'Invalid format type');
-  //     }
-
-  //     const formattedBuffer = await sharp(buffer).toFormat(formatType).toBuffer();
-
-  //     storage = extractStorage(storage, image, process.format, formattedBuffer, {
-  //       formatType: formatType as unknown as string,
-  //     });
-
-  //     this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
-
-  //     return { success: true, message: `Image formatted to ${formatType}` };
-  //   } catch (error) {
-  //     error.meta = { ...error.meta, 'imageProcessing.format': { publicId, formatType } };
-  //     throw error;
-  //   }
-  // }
+      return {
+        data: { publicId },
+        image: storage.currentState,
+        success: true,
+        message: `Image formatted to ${options.formatType as unknown as string}`,
+      };
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.format': { publicId, options } };
+      throw error;
+    }
+  }
 }

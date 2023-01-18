@@ -1,20 +1,9 @@
-import { RGBA, Region } from 'sharp';
 import { v4 as uuid } from 'uuid';
 
 import { formatTypes, process } from '../constants';
 import { Image } from '../interfaces/schema/image';
 import { Storage } from '../interfaces/schema/storage';
-
-interface Options {
-  width?: number;
-  height?: number;
-  dimension?: Region;
-  tintOptions?: RGBA;
-  angle?: number;
-  blurPoint?: number;
-  sharpenPoint?: number;
-  formatType?: string;
-}
+import { Options } from '../interfaces/service/common/options';
 
 export const isValidFormatType = (format: string): Boolean => {
   return formatTypes.includes(format);
@@ -61,8 +50,8 @@ export const extractStorage = (
       effectsKey = `${process.sharpen}_${options.sharpenPoint}_${uuid()}`;
       break;
     case process.format:
-      effectsKey = `${process.format}_${options.formatType}_${uuid()}`;
-      processedData.fileName = `${processedData.fileName.split('.')[0]}.${options.formatType}`;
+      effectsKey = `${process.format}_${options.formatType as unknown as string}_${uuid()}`;
+      processedData.fileName = `${processedData.fileName.split('.')[0]}.${options.formatType as unknown as string}`;
       break;
     default:
       throw new Error('Undefined process type');

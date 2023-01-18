@@ -14,21 +14,14 @@ export const socket = new socketIo.Server(server, {
 });
 
 import { _init } from './controller';
-import { workerEvent } from './backgroundJobs/workers';
-import { workers } from './constants';
-import { UploadResponse } from './interfaces/service/image/uploadResponse';
+import { emitMeta } from './helpers/emitMeta';
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 _init(app);
 
-socket.on('connection', (obj) => {
-  workerEvent.on(workers.EMIT_DATA, (meta: UploadResponse) => {
-    console.log(`🚀 ~ file: index.ts:26 ~ workerEvent.on ~ meta`, meta.data.publicId, meta.image.processType);
-    socket.emit(meta.data.publicId, meta);
-  });
-});
+socket.on('connection', emitMeta);
 
 server.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);

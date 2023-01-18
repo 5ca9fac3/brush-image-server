@@ -2,11 +2,11 @@ FROM node:18.12.1
 
 WORKDIR /app
 
-COPY package.json ./
+COPY . .
 
 RUN npm install -g typescript \
-    && npm install \
-    && npm install -g socket.io
+    && npm install -g socket.io \
+    && npm install
 
 COPY . .
 
