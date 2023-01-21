@@ -5,10 +5,11 @@ WORKDIR /app
 COPY . .
 
 RUN npm install -g typescript \
-    && npm install -g socket.io \
     && npm install
 
 COPY . .
+
+RUN npm install -g socket.io
 
 EXPOSE 8000 8000
 
