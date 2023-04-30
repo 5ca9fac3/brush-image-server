@@ -10,6 +10,7 @@ import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
 import { General } from '../../interfaces/service/common/general';
 import { ProcessorParams } from '../../interfaces/service/common/processorParams';
 import { TintColor } from '../../interfaces/service/image/tintColor';
+import { Image } from '../../interfaces/schema/image';
 
 export class ImageEditingService {
   cacheService: CacheService;
@@ -42,10 +43,21 @@ export class ImageEditingService {
     }
   }
 
+  getImage(storage: Storage): Image {
+    try {
+      const effect = storage.effects[storage.effectsIdx];
+      const image = storage.effectsApplied[effect];
+      return image;
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageEditing.getImage': { storage } };
+      throw error;
+    }
+  }
+
   async resize(publicId: string, width: number, height: number): Promise<General> {
     try {
       let storage = await this.getImageData(publicId);
-      const image = storage.currentState;
+      const image = this.getImage(storage);
 
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
@@ -79,7 +91,7 @@ export class ImageEditingService {
   async crop(publicId: string, dimension: Region): Promise<General> {
     try {
       let storage = await this.getImageData(publicId);
-      const image = storage.currentState;
+      const image = this.getImage(storage);
 
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);

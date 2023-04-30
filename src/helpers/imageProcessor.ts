@@ -64,8 +64,6 @@ export const extractStorage = (
 
   storage.effects.push(effectsKey);
   storage.effectsApplied[effectsKey] = processedData;
-
-  storage.currentState = processedData;
   storage.effectsIdx += 1;
 
   return storage;

@@ -8,6 +8,8 @@ import { ImageService } from '../image';
 import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
 import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
 import { ProcessorParams } from '../../interfaces/service/common/processorParams';
+import { Image } from '../../interfaces/schema/image';
+import { Storage } from '../../interfaces/schema/storage';
 
 export class ImageProcessingService {
   cacheService: CacheService;
@@ -31,9 +33,21 @@ export class ImageProcessingService {
     }
   }
 
+  getImage(storage: Storage): Image {
+    try {
+      const effect = storage.effects[storage.effectsIdx];
+      const image = storage.effectsApplied[effect];
+
+      return image;
+    } catch (error) {
+      error.meta = { ...error.meta, 'imageProcessing.getImage': { storage } };
+      throw error;
+    }
+  }
+
   async resize({ storage, publicId, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -46,7 +60,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is resized' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is resized',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.resize': { storage, publicId, options } };
       throw error;
@@ -55,7 +74,7 @@ export class ImageProcessingService {
 
   async crop({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -65,7 +84,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is cropped' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is cropped',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.crop': { publicId, options } };
       throw error;
@@ -74,7 +98,7 @@ export class ImageProcessingService {
 
   async grayscale({ publicId, storage }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -84,7 +108,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is grayscaled' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is grayscaled',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.grayscale': { publicId } };
       throw error;
@@ -93,7 +122,7 @@ export class ImageProcessingService {
 
   async tint({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -106,7 +135,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is tinted' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is tinted',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.tint': { publicId, options } };
       throw error;
@@ -115,7 +149,7 @@ export class ImageProcessingService {
 
   async rotate({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -125,7 +159,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is rotated' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is rotated',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.rotate': { publicId, options } };
       throw error;
@@ -134,7 +173,7 @@ export class ImageProcessingService {
 
   async blur({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -144,7 +183,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is blurred' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is blurred',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.blur': { publicId, options } };
       throw error;
@@ -153,7 +197,7 @@ export class ImageProcessingService {
 
   async sharpen({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
       const metaData = await this.metaData(buffer);
 
@@ -163,7 +207,12 @@ export class ImageProcessingService {
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
-      return { data: { publicId }, image: storage.currentState, success: true, message: 'Image is sharpened' };
+      return {
+        data: { publicId },
+        image: storage.effectsApplied[storage.effectsIdx],
+        success: true,
+        message: 'Image is sharpened',
+      };
     } catch (error) {
       error.meta = { ...error.meta, 'imageProcessing.sharpen': { publicId, options } };
       throw error;
@@ -172,7 +221,7 @@ export class ImageProcessingService {
 
   async format({ publicId, storage, options }: ProcessorParams): Promise<UploadResponse> {
     try {
-      const image = storage.currentState;
+      const image = this.getImage(storage);
       const buffer = Buffer.from(image.buffer, 'base64');
 
       const formattedBuffer = await sharp(buffer).toFormat(options.formatType).toBuffer();
@@ -183,7 +232,7 @@ export class ImageProcessingService {
 
       return {
         data: { publicId },
-        image: storage.currentState,
+        image: storage.effectsApplied[storage.effectsIdx],
         success: true,
         message: `Image formatted to ${options.formatType as unknown as string}`,
       };

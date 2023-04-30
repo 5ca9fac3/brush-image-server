@@ -32,7 +32,6 @@ export class ImageService {
         _id: uuid(),
         effects: ['original'],
         effectsIdx: 0,
-        currentState: image,
         effectsApplied: { original: image },
       };
 
@@ -48,7 +47,9 @@ export class ImageService {
   async download(publicId: string): Promise<General> {
     try {
       const storage = (await this.cacheService.getData(publicId)) as unknown as Storage;
-      const image = storage.currentState;
+      
+      const effect = storage.effects[storage.effectsIdx];
+      const image = storage.effectsApplied[effect];
 
       const directory = process.cwd().split('src')[0];
       const [originalName, extension] = image.fileName.split('.');
@@ -75,11 +76,6 @@ export class ImageService {
         storage.effectsIdx -= 1;
       }
 
-      const effects = storage.effects;
-      const idx = storage.effectsIdx;
-      const currentState = storage.effectsApplied[effects[idx]];
-      storage.currentState = currentState;
-
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
       return { success: true, message: 'Previous effect applied', data: { publicId: storage._id } };
@@ -96,11 +92,6 @@ export class ImageService {
       if (storage.effectsIdx !== storage.effects.length - 1) {
         storage.effectsIdx += 1;
       }
-
-      const effects = storage.effects;
-      const idx = storage.effectsIdx;
-      const currentState = storage.effectsApplied[effects[idx]];
-      storage.currentState = currentState;
 
       this.queueEvent.emit(event.BACKGROUND_JOB, JOB.cacheStorage.name, { storage });
 
