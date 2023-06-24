@@ -8,7 +8,7 @@
     "start:build": "tsc -w",
     "start:run": "nodemon dist/index.js",
     "start": "concurrently npm:start:*",
-    "run:prod": "tsc && node dist/index.js"
+    "prod": "tsc && node dist/index.js"
   },
   "keywords": [],
   "author": "",
