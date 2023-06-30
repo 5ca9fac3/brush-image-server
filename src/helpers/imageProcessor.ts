@@ -1,9 +1,7 @@
 import { v4 as uuid } from 'uuid';
 
 import { formatTypes, process } from '../constants';
-import { Image } from '../interfaces/schema/image';
-import { Storage } from '../interfaces/schema/storage';
-import { Options } from '../interfaces/service/common/options';
+import { Image, Storage, Options } from '../types';
 
 export const isValidFormatType = (format: string): Boolean => {
   return formatTypes.includes(format);

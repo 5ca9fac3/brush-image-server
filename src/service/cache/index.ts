@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 
-import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
+import { ConstructorOpts } from '../../types';
 
 export class CacheService {
   cache: Redis;

@@ -5,12 +5,7 @@ import { v4 as uuid } from 'uuid';
 import { JOB, event } from '../../constants';
 
 import { CacheService } from '../cache';
-import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
-import { General } from '../../interfaces/service/common/general';
-import { FileType } from '../../interfaces/service/image/fileType';
-import { Image } from '../../interfaces/schema/image';
-import { Storage } from '../../interfaces/schema/storage';
-import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
+import { UploadResponse, General, FileType, Image, Storage, ConstructorOpts } from '../../types';
 
 export class ImageService {
   cacheService: CacheService;
@@ -47,7 +42,7 @@ export class ImageService {
   async download(publicId: string): Promise<General> {
     try {
       const storage = (await this.cacheService.getData(publicId)) as unknown as Storage;
-      
+
       const effect = storage.effects[storage.effectsIdx];
       const image = storage.effectsApplied[effect];
 

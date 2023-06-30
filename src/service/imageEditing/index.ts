@@ -5,12 +5,7 @@ import EventEmitter from 'events';
 import { process, workers } from '../../constants';
 import { isValidFormatType } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
-import { Storage } from '../../interfaces/schema/storage';
-import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
-import { General } from '../../interfaces/service/common/general';
-import { ProcessorParams } from '../../interfaces/service/common/processorParams';
-import { TintColor } from '../../interfaces/service/image/tintColor';
-import { Image } from '../../interfaces/schema/image';
+import { Storage, ConstructorOpts, General, ProcessorParams, TintColor, Image } from '../../types';
 
 export class ImageEditingService {
   cacheService: CacheService;

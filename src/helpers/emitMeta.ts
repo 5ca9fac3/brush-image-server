@@ -1,6 +1,6 @@
 import { socket } from '..';
 
-import { UploadResponse } from '../interfaces/service/image/uploadResponse';
+import { UploadResponse } from '../types';
 import { workerEvent } from '../backgroundJobs/workers';
 import { workers } from '../constants';
 

@@ -5,11 +5,7 @@ import { JOB, event, process } from '../../constants';
 import { extractStorage } from '../../helpers/imageProcessor';
 import { CacheService } from '../cache';
 import { ImageService } from '../image';
-import { ConstructorOpts } from '../../interfaces/common/constructorOpts';
-import { UploadResponse } from '../../interfaces/service/image/uploadResponse';
-import { ProcessorParams } from '../../interfaces/service/common/processorParams';
-import { Image } from '../../interfaces/schema/image';
-import { Storage } from '../../interfaces/schema/storage';
+import { ConstructorOpts, UploadResponse, ProcessorParams, Image, Storage } from '../../types';
 
 export class ImageProcessingService {
   cacheService: CacheService;

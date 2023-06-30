@@ -1,5 +1,4 @@
-import { HttpError } from '../interfaces/network/httpError';
-import { ErrorResponse } from '../interfaces/network/errorResponse';
+import { HttpError, ErrorResponse } from '../types';
 
 export const response = (error: HttpError): ErrorResponse => {
   console.log(error);
