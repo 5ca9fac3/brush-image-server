@@ -1,4 +1,4 @@
-import { Storage } from '../storage';
+import { Storage } from './storage';
 import { Options } from './options';
 
 export interface ProcessorParams {

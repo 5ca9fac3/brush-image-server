@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
-import { HttpError } from '../../interfaces/network/httpError';
+import { HttpError } from '../../types/httpError';
 
 export const noRoutesMatched = (req: Request, res: Response, next: NextFunction) => {
   if (!req.route) {
