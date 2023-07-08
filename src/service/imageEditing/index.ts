@@ -9,11 +9,11 @@ import { Storage, ConstructorOpts, General, ProcessorParams, TintColor, Image } 
 
 export class ImageEditingService {
   cacheService: CacheService;
-  workerEvent: EventEmitter;
+  imageWorkerEvent: EventEmitter;
 
   constructor(opts: ConstructorOpts) {
     this.cacheService = opts.cacheService;
-    this.workerEvent = opts.workerEvent;
+    this.imageWorkerEvent = opts.imageWorkerEvent;
   }
 
   async getImageData(storageId: string): Promise<Storage> {
@@ -74,7 +74,7 @@ export class ImageEditingService {
       }
 
       const data: ProcessorParams = { options: { width, height }, storage, publicId, imageProcess: process.resize };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be resized' };
     } catch (error) {
@@ -108,7 +108,7 @@ export class ImageEditingService {
       }
 
       const data = { options: { dimension }, storage, publicId, imageProcess: process.crop };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be cropped' };
     } catch (error) {
@@ -122,7 +122,7 @@ export class ImageEditingService {
       let storage = await this.getImageData(publicId);
 
       const data = { options: {}, storage, publicId, imageProcess: process.grayscale };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be grayscaled' };
     } catch (error) {
@@ -138,7 +138,7 @@ export class ImageEditingService {
       const tintOptions = { r: tintColor.red, g: tintColor.green, b: tintColor.blue };
 
       const data = { options: { tintOptions }, storage, publicId, imageProcess: process.tint };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be tinted' };
     } catch (error) {
@@ -156,7 +156,7 @@ export class ImageEditingService {
       }
 
       const data = { options: { angle }, storage, publicId, imageProcess: process.rotate };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be rotated' };
     } catch (error) {
@@ -174,7 +174,7 @@ export class ImageEditingService {
       }
 
       const data = { options: { blurPoint }, storage, publicId, imageProcess: process.blur };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be blurred' };
     } catch (error) {
@@ -192,7 +192,7 @@ export class ImageEditingService {
       }
 
       const data = { options: { sharpenPoint }, storage, publicId, imageProcess: process.sharpen };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: 'Image will be sharpened' };
     } catch (error) {
@@ -214,7 +214,7 @@ export class ImageEditingService {
       }
 
       const data = { options: { formatType }, storage, publicId, imageProcess: process.format };
-      this.workerEvent.emit(workers.PROCESS_IMAGE, { data });
+      this.imageWorkerEvent.emit(workers.PROCESS_IMAGE, { data });
 
       return { success: true, message: `Image formatted to ${formatType}` };
     } catch (error) {

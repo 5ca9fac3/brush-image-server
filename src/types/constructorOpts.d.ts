@@ -12,6 +12,6 @@ export interface ConstructorOpts {
   imageService?: ImageService;
   imageProcessingService?: ImageProcessingService;
   queueEvent?: EventEmitter;
-  workerEvent?: EventEmitter;
+  imageWorkerEvent?: EventEmitter;
   uploadImage?: Multer;
 }
