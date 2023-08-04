@@ -48,7 +48,7 @@ export class ImageProcessingService {
       const metaData = await this.metaData(buffer);
 
       const resizedBuffer = await sharp(buffer)
-        .resize(options.width, options.height)
+        .resize(options.width, options.height, { fit: 'inside' })
         .toFormat(metaData.format)
         .toBuffer();
 
